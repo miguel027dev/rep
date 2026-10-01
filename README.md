@@ -69,6 +69,25 @@ Tabelas:
 
 `rep_accounts.state` usa `JSONB` para manter compatibilidade com o formato de estado já esperado pelo frontend.
 
+## REP V1 e REP V2
+
+A experiência original permanece disponível como **REP V1**. O usuário pode ativar ou desativar a **REP V2** pelo Perfil sem apagar histórico.
+
+A V2 adiciona:
+
+- motor de treino separado em `shared/workouts-v2.js` e `backend/workouts_v2.py`;
+- divisão semanal baseada em frequência, experiência, equipamentos e duração disponível;
+- registro por série de carga, repetições e RIR;
+- progressão explicável usando histórico recente;
+- configuração de duração por sessão e até três grupos musculares prioritários;
+- analytics de séries, repetições e volume registrado;
+- contexto V2 enviado server-side para o chat NVIDIA;
+- REP Circle com compartilhamento manual de resumos estruturados;
+- Circle público desativado para menores de 18 anos;
+- progressão automática de carga desativada para menores de 18 anos.
+
+A V1 continua usando o motor anterior e não é sobrescrita pela V2.
+
 ## Privacidade e LGPD
 
 - `/privacidade`: Política de Privacidade pública, com categorias de dados, finalidades, bases legais, direitos do titular, fornecedores, retenção, segurança e transferências internacionais.

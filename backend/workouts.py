@@ -153,6 +153,10 @@ def sanitize_workout_cards(value):
                 "warmupSets": min(3, max(0, round(float(e.get("warmupSets") or 0)))),
                 "restSeconds": min(300, max(30, round(float(e.get("restSeconds") or 90)))),
                 "reps": bounded_text(e.get("reps"), 40),
+                "id": bounded_text(e.get("id"), 80),
+                "targetRir": min(5, max(0, float(e.get("targetRir")))) if isinstance(e.get("targetRir"), (int,float)) else None,
+                "suggestedLoad": min(500, max(0, float(e.get("suggestedLoad")))) if isinstance(e.get("suggestedLoad"), (int,float)) else None,
+                "progressionReason": bounded_text(e.get("progressionReason"), 300),
             })
         if exercises:
             result.append({

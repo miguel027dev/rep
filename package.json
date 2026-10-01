@@ -7,7 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "test": "npm run test:frontend && pytest -q",
-    "test:frontend": "node --test tests/chat-experience.test.mjs tests/style-onboarding.test.mjs tests/workouts.test.mjs",
+    "test:frontend": "node --test tests/chat-experience.test.mjs tests/style-onboarding.test.mjs tests/workouts.test.mjs tests/v2-engine.test.mjs",
     "test:backend": "pytest -q"
   },
   "dependencies": {
