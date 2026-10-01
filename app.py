@@ -6,6 +6,7 @@ from backend.account import account_bp
 from backend.auth import auth_bp
 from backend.chat import chat_bp
 from backend.privacy import privacy_bp
+from backend.social_v2 import social_v2_bp
 from backend.db import init_db
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -17,6 +18,7 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(account_bp)
 app.register_blueprint(chat_bp)
 app.register_blueprint(privacy_bp)
+app.register_blueprint(social_v2_bp)
 
 _initialized = False
 
