@@ -28,6 +28,21 @@ def validate_account_state(raw, email):
     if "theme" in p and p["theme"] not in ["essential", "energy"]:
         raise ValueError("Estilo inválido.")
     profile["theme"] = p.get("theme") or "essential"
+    version = p.get("experienceVersion") or "v1"
+    if version not in ["v1", "v2"]:
+        raise ValueError("Versão da experiência inválida.")
+    profile["experienceVersion"] = version
+    if "sessionMinutes" in p:
+        if not isinstance(p["sessionMinutes"], int) or not 25 <= p["sessionMinutes"] <= 75:
+            raise ValueError("Duração de sessão inválida.")
+        profile["sessionMinutes"] = p["sessionMinutes"]
+    else:
+        profile["sessionMinutes"] = 50
+    allowed_priorities = {"Peitoral","Costas","Pernas","Posterior","Glúteos","Ombros","Bíceps","Tríceps","Panturrilha"}
+    if isinstance(p.get("priorityMuscles"), list):
+        profile["priorityMuscles"] = [string(x, 40) for x in p["priorityMuscles"][:3] if string(x,40) in allowed_priorities]
+    else:
+        profile["priorityMuscles"] = []
     if "age" in p:
         if not isinstance(p["age"], int) or not 13 <= p["age"] <= 100:
             raise ValueError("O REP está disponível a partir de 13 anos.")
@@ -74,9 +89,35 @@ def validate_account_state(raw, email):
             if isinstance(l.get("weights"), dict):
                 for k, v in list(l["weights"].items())[:100]:
                     weights[string(k, 20)] = string(str(v), 20)
+            set_logs = []
+            if isinstance(l.get("setLogs"), list):
+                for s in l["setLogs"][:160]:
+                    if not isinstance(s, dict):
+                        continue
+                    reps = min(100, max(0, int(float(s.get("reps") or 0))))
+                    weight = min(500, max(0, float(s.get("weight") or 0)))
+                    rir = min(5, max(0, float(s.get("rir") if s.get("rir") is not None else 2)))
+                    if reps <= 0:
+                        continue
+                    set_logs.append({
+                        "exerciseId": string(s.get("exerciseId"), 80),
+                        "exerciseName": string(s.get("exerciseName"), 100),
+                        "group": string(s.get("group"), 60),
+                        "setIndex": min(20, max(1, int(float(s.get("setIndex") or 1)))),
+                        "weight": weight, "reps": reps, "rir": rir,
+                        "targetRir": min(5, max(0, float(s.get("targetRir") if s.get("targetRir") is not None else rir))),
+                        "completed": s.get("completed") is True,
+                    })
+            feedback = {}
+            if isinstance(l.get("feedback"), dict):
+                effort = l["feedback"].get("effort")
+                if isinstance(effort, (int, float)) and 1 <= effort <= 5:
+                    feedback["effort"] = int(effort)
             logs.append({
                 "id": string(l.get("id"), 80), "name": string(l.get("name"), 120), "date": string(l.get("date"), 40),
-                "minutes": min(600, max(1, float(l.get("minutes") or 1))), "sets": min(300, max(0, float(l.get("sets") or 0))), "weights": weights,
+                "minutes": min(600, max(1, float(l.get("minutes") or 1))), "sets": min(300, max(0, float(l.get("sets") or 0))),
+                "weights": weights, "setLogs": set_logs, "feedback": feedback,
+                "engine": "v2" if l.get("engine") == "v2" else "v1",
             })
     return {"profile": profile, "messages": messages, "logs": logs, "step": raw["step"]}
 
