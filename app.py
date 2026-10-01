@@ -5,6 +5,7 @@ from flask import Flask, jsonify, send_from_directory
 from backend.account import account_bp
 from backend.auth import auth_bp
 from backend.chat import chat_bp
+from backend.privacy import privacy_bp
 from backend.db import init_db
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -15,6 +16,7 @@ app.config["MAX_CONTENT_LENGTH"] = 1_100_000
 app.register_blueprint(auth_bp)
 app.register_blueprint(account_bp)
 app.register_blueprint(chat_bp)
+app.register_blueprint(privacy_bp)
 
 _initialized = False
 
