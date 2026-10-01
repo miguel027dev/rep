@@ -6,6 +6,7 @@ const LIB=[
  movement('pushup','Flexão inclinada','Peitoral','Peso corporal',true,'Mantenha o corpo alinhado e ajuste a altura do apoio.',['Supino com halteres']),
  movement('row_cable','Remada baixa','Costas','Cabos',true,'Puxe com os cotovelos sem jogar o tronco para trás.',['Remada unilateral','Remada na máquina']),
  movement('row_db','Remada unilateral','Costas','Halteres',true,'Apoie-se com firmeza e mantenha a coluna neutra.',['Remada baixa']),
+ movement('row_bw','Elevação de braços em W','Costas','Peso corporal',false,'Deitado de barriga para baixo, mova os braços sem forçar a lombar.'),
  movement('pulldown','Puxada na polia','Costas','Cabos',true,'Puxe em direção à parte alta do peito sem balanço.',['Puxada na máquina']),
  movement('legpress','Leg press','Pernas','Máquinas',true,'Use amplitude confortável e mantenha a lombar apoiada.',['Agachamento goblet']),
  movement('goblet','Agachamento goblet','Pernas','Halteres',true,'Mantenha os pés firmes e desça com controle.',['Leg press']),
@@ -15,6 +16,7 @@ const LIB=[
  movement('hipbridge','Ponte de glúteos','Glúteos','Peso corporal',false,'Eleve o quadril sem exagerar a curvatura lombar.',['Levantamento romeno']),
  movement('shoulder_press','Desenvolvimento na máquina','Ombros','Máquinas',true,'Controle a descida e evite compensar com a lombar.',['Desenvolvimento com halteres']),
  movement('db_press','Desenvolvimento com halteres','Ombros','Halteres',true,'Use amplitude confortável e tronco estável.',['Desenvolvimento na máquina']),
+ movement('wall_press','Flexão na parede','Ombros','Peso corporal',true,'Mantenha o corpo alinhado e use um ritmo controlado.'),
  movement('lateral','Elevação lateral','Ombros','Halteres',false,'Eleve com controle sem usar impulso.',['Elevação lateral na polia']),
  movement('curl','Rosca com halteres','Bíceps','Halteres',false,'Mantenha os cotovelos estáveis.',['Rosca na polia']),
  movement('triceps','Tríceps na polia','Tríceps','Cabos',false,'Estenda os cotovelos sem mover os ombros.',['Extensão com halteres']),
@@ -51,7 +53,7 @@ function prescribe(ex,p,logs){
  return {...ex,sets,warmupSets:ex.compound?2:1,reps,targetRir,restSeconds,suggestedLoad,progressionReason};
 }
 function templates(p){
- const chest=pick(p,['chest_machine','db_bench','pushup']),row=pick(p,['row_cable','row_db']),pull=pick(p,['pulldown','row_cable','row_db']),squat=pick(p,['legpress','goblet','squat_bw']),hinge=pick(p,['rdl','hipbridge']),curl=pick(p,['curl','plank']),tri=pick(p,['triceps','plank']),press=pick(p,['shoulder_press','db_press','lateral']),lat=pick(p,['lateral','db_press']),ham=pick(p,['legcurl','rdl','hipbridge']),calf=byId('calf'),core=byId('plank');
+ const chest=pick(p,['chest_machine','db_bench','pushup']),row=pick(p,['row_cable','row_db','row_bw']),pull=pick(p,['pulldown','row_cable','row_db','row_bw']),squat=pick(p,['legpress','goblet','squat_bw']),hinge=pick(p,['rdl','hipbridge']),curl=pick(p,['curl','plank']),tri=pick(p,['triceps','plank']),press=pick(p,['shoulder_press','db_press','wall_press']),lat=pick(p,['lateral','db_press','wall_press']),ham=pick(p,['legcurl','rdl','hipbridge']),calf=byId('calf'),core=byId('plank');
  const days=Math.min(5,Math.max(2,Number(p.days)||3)),minor=Number.isInteger(p.age)&&p.age<18;
  if(minor||days===2)return [
   ['Corpo inteiro A','Pernas · peito · costas',[squat,chest,row,hinge,core]],
