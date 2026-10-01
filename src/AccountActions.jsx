@@ -1,0 +1,7 @@
+import React,{useState} from 'react';
+import {LogOut,Trash2,ShieldCheck,LoaderCircle} from 'lucide-react';
+export default function AccountActions({signOut,onDelete}){
+ const [leaving,setLeaving]=useState(false),[error,setError]=useState('');
+ async function leave(){setLeaving(true);setError('');try{await signOut()}catch{setError('Não conseguimos sair agora. Tente novamente.')}finally{setLeaving(false)}}
+ return <section className="panel account-settings" aria-labelledby="account-settings-title"><div className="account-settings-heading"><span className="account-settings-icon"><ShieldCheck size={20}/></span><div><h2 id="account-settings-title">Sua conta</h2><p>Seu progresso acompanha você.</p></div></div><button className="account-row account-logout" aria-label="Sair da conta" disabled={leaving} aria-busy={leaving} onClick={leave}><span className="account-row-icon">{leaving?<LoaderCircle size={20} className="spin"/>:<LogOut size={20}/>}</span><span><strong>{leaving?'Encerrando sessão…':'Sair da conta'}</strong><small>Seus treinos e sua conversa ficam salvos.</small></span></button>{error&&<p className="account-exit-error" role="alert">{error}</p>}<div className="account-danger"><button className="account-row account-delete" aria-label="Apagar meu perfil REP" onClick={onDelete}><span className="account-row-icon"><Trash2 size={20}/></span><span><strong>Apagar meu perfil REP</strong><small>Remover meu perfil, conversas e registros.</small></span></button></div></section>
+}

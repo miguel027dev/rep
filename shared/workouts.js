@@ -1,0 +1,56 @@
+const movement=(name,group,equipment,tip,compound=false)=>({name,group,equipment,tip,compound});
+export const TRAINING_METHOD='HIT · inspirado em Dorian Yates';
+export function makePlan(p={}){
+ const eq=Array.isArray(p.equipment)&&p.equipment.length?p.equipment:['Peso corporal'];const has=e=>eq.includes(e);const minor=Number.isInteger(p.age)&&p.age<18;const beginner=minor||!['Intermediário','Avançado'].includes(p.experience);const restricted=!!p.limitations&&p.limitations!=='Nenhuma';const bodyweight=!has('Halteres')&&!has('Máquinas')&&!has('Cabos')&&!has('Barras');const days=Math.min(5,Math.max(2,p.days||3));
+ const chest=has('Máquinas')?movement('Supino na máquina','Peitoral','Máquinas','Desça com controle e mantenha as escápulas apoiadas.',true):has('Halteres')?movement(has('Banco')?'Supino com halteres':'Supino com halteres no chão','Peitoral','Halteres','Controle a descida. Pare antes de perder a posição dos ombros.',true):movement('Flexão inclinada','Peitoral','Peso corporal','Use uma parede ou apoio firme. Mantenha o corpo alinhado.',true);
+ const row=has('Cabos')?movement('Remada baixa','Costas','Cabos','Puxe com os cotovelos, sem jogar o tronco para trás.',true):has('Halteres')?movement('Remada unilateral','Costas','Halteres','Apoie a mão e mantenha a coluna neutra.',true):has('Máquinas')?movement('Remada na máquina','Costas','Máquinas','Controle a volta e mantenha o peito apoiado.',true):has('Barras')?movement('Remada com barra','Costas','Barras','Use carga que permita manter a coluna neutra.',true):movement('Elevação de braços em W','Costas','Peso corporal','Deitado de barriga para baixo, mova os braços sem forçar a lombar.');
+ const pulldown=has('Cabos')?movement('Puxada na polia','Costas','Cabos','Puxe em direção à parte alta do peito, sem balanço.',true):has('Máquinas')?movement('Puxada na máquina','Costas','Máquinas','Mantenha o tronco estável e controle a volta.',true):null;
+ const squat=has('Máquinas')?movement('Leg press','Pernas','Máquinas','Mantenha a lombar apoiada e use uma amplitude confortável.',true):has('Halteres')?movement('Agachamento goblet','Pernas','Halteres','Segure o halter junto ao peito e mantenha os pés apoiados.',true):movement('Agachamento livre','Pernas','Peso corporal','Desça com controle até uma amplitude confortável.',true);
+ const hip=has('Halteres')?movement('Levantamento romeno','Posterior','Halteres','Leve o quadril para trás, mantendo a coluna neutra.',true):movement('Ponte de glúteos','Glúteos','Peso corporal','Eleve o quadril sem exagerar a curvatura da lombar.');
+ const shoulder=has('Halteres')?movement('Elevação lateral','Ombros','Halteres','Use carga leve e eleve até a linha dos ombros.'):movement('Flexão na parede','Ombros','Peso corporal','Mantenha o corpo alinhado e use um ritmo controlado.',true);
+ const press=has('Máquinas')?movement('Desenvolvimento na máquina','Ombros','Máquinas','Evite arquear a lombar e controle a descida.',true):has('Halteres')?movement('Desenvolvimento com halteres','Ombros','Halteres','Use uma amplitude confortável, sem compensar com a lombar.',true):shoulder;
+ const curl=has('Halteres')?movement('Rosca com halteres','Bíceps','Halteres','Mantenha os cotovelos junto ao corpo, sem impulso.'):has('Cabos')?movement('Rosca na polia','Bíceps','Cabos','Mantenha o tronco estável durante toda a repetição.'):null;
+ const triceps=has('Cabos')?movement('Tríceps na polia','Tríceps','Cabos','Estenda os cotovelos sem mover os ombros.'):has('Halteres')?movement('Extensão de tríceps deitado','Tríceps','Halteres','Use carga leve e mantenha os cotovelos estáveis.'):movement('Flexão na parede com mãos próximas','Tríceps','Peso corporal','Aproxime as mãos apenas até uma posição confortável.',true);
+ const legcurl=has('Máquinas')?movement('Mesa flexora','Posterior','Máquinas','Flexione os joelhos sem levantar o quadril.'):movement('Afundo com apoio','Pernas',has('Halteres')?'Halteres':'Peso corporal','Use apoio firme e respeite a amplitude confortável.',true);
+ const calf=movement('Elevação de panturrilha','Panturrilha','Peso corporal','Suba e desça sem impulso, com apoio para equilíbrio.');const core=movement('Prancha','Core','Peso corporal','Respire normalmente e pare antes de perder o alinhamento.');
+ let sessions;
+ if(beginner||bodyweight||days===2)sessions=[['Corpo inteiro A','Pernas · peito · costas',[squat,chest,row,hip,core]],['Corpo inteiro B','Posterior · ombros · costas',[hip,press,row,calf,core]],['Corpo inteiro C','Pernas · peito · core',[squat,chest,row,curl||shoulder,core]],['Corpo inteiro D','Posterior · costas · ombros',[hip,row,shoulder,calf,core]]];
+ else if(days===3)sessions=[['Peito, ombros e tríceps','Empurrar · superiores',[chest,press,shoulder,triceps]],['Costas e bíceps','Puxar · superiores',[pulldown,row,curl,core].filter(Boolean)],['Pernas e core','Pernas · glúteos · posterior',[squat,hip,legcurl,calf,core]]];
+ else sessions=[['Ombros e tríceps','Ombros · tríceps',[press,shoulder,triceps]],['Costas','Costas · posterior',[pulldown,row,hip,core].filter(Boolean)],['Peito e bíceps','Peitoral · bíceps',[chest,curl,core].filter(Boolean)],['Pernas','Quadríceps · posterior · panturrilha',[squat,legcurl,calf,core]]];
+ if(!minor&&(beginner||bodyweight)&&days>=4)sessions=[['Superiores A','Peito · costas · ombros',[chest,row,shoulder,curl||core]],['Inferiores A','Pernas · posterior · core',[squat,hip,calf,core]],['Superiores B','Ombros · costas · tríceps',[press,row,triceps,core]],['Inferiores B','Pernas · posterior · panturrilha',[squat,legcurl,calf,core]]];
+ const resistance=sessions.slice(0,Math.min(days,minor?3:4)).map(([name,focus,moves],id)=>({
+ id,name,focus,kind:'strength',method:minor?'BASE · técnica supervisionada':TRAINING_METHOD,minutes:beginner?40:35,
+ intensity:minor?'3–4 repetições de reserva':beginner||restricted?'2–3 repetições de reserva':'1–2 repetições de reserva',
+ recovery:(beginner||bodyweight)&&days<=3?'Deixe pelo menos 48 horas entre estas sessões de corpo inteiro.':'Distribua as sessões na semana e dê 48–72 horas de recuperação ao mesmo grupo muscular.',
+ note:minor?'Dos 13 aos 17, treine com acompanhamento de um responsável e profissional. Priorize técnica, sem falha ou testes máximos.':restricted?'Você informou uma restrição. Valide estes exercícios com um profissional antes de começar.':beginner?'Primeiro domine o movimento. As séries principais terminam com 2–3 repetições de reserva.':'Uma série principal por exercício, com execução controlada. Sem repetições forçadas ou ajuda para ultrapassar a falha.',
+ progression:minor?'Ajuste cargas apenas com seu professor, quando o movimento estiver confortável e estável.':'Quando alcançar o topo da faixa com boa técnica em todas as séries, considere um pequeno aumento de carga na próxima sessão.',
+ exercises:moves.map(e=>({name:e.name,group:e.group,equipment:e.equipment,tip:e.tip,sets:beginner?2:1,warmupSets:e.compound?2:1,restSeconds:e.compound?(beginner?120:150):90,reps:e.name==='Prancha'?'20–30 s':e.group==='Panturrilha'?'12–15':beginner?'8–12':p.goal==='Ganhar massa muscular'?(e.compound?'6–10':'10–12'):'10–15'}))
+ }));
+ if(days===5||minor&&days>=4)resistance.push({id:resistance.length,name:'Recuperação ativa',focus:'Mobilidade · movimento leve',kind:'recovery',method:'RECUPERAÇÃO · REP',minutes:25,intensity:'Ritmo confortável',recovery:'Recuperar também faz parte do plano.',note:'Este quinto dia é leve. Ele não acrescenta outra sessão intensa de musculação.',progression:'Mantenha um ritmo em que consiga conversar sem dificuldade.',exercises:[{name:'Caminhada leve',group:'Condicionamento',equipment:'Peso corporal',tip:'Caminhe em um ritmo confortável.',sets:1,warmupSets:0,restSeconds:60,reps:'15 min'},{name:'Mobilidade de quadril',group:'Mobilidade',equipment:'Peso corporal',tip:'Movimente sem dor e sem forçar a amplitude.',sets:1,warmupSets:0,restSeconds:60,reps:'3 min'},{name:'Mobilidade de ombros',group:'Mobilidade',equipment:'Peso corporal',tip:'Faça movimentos leves e confortáveis.',sets:1,warmupSets:0,restSeconds:60,reps:'3 min'}]});
+ return resistance;
+}
+const normalized=text=>String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+export function selectWorkoutCards(text,p,nextWorkoutId=0){
+ const t=normalized(text);
+ if(!p.goal||!p.experience||!p.days||!p.equipment?.length)return [];
+ if(/\b(dor|dores|lesao|lesoes|machucado|tontura)\b/.test(t))return [];
+ const explicit=/\b(monte|monta|montar|crie|cria|criar|gere|gera|gerar|mostre|mostra|mostrar|prepare|preparar|recomende|recomenda|sugira|sugere|organize|organiza|quero|preciso|mande|manda|mandar|envie|enviar|passa|passe|da|de|ver|fazer|comecar)\b.*\b(treino|treinos|plano|rotina|ficha|exercicios)\b/.test(t);
+ const request=explicit||/^(treino|treinos|plano)$/.test(t.trim())||/\b(quero|preciso)\b.*\btreinar\b/.test(t)||/\b(qual|que) treino\b|\b(meu|meus|minha) (treino|treinos|plano|rotina|ficha)\b|\btreinar\b.*\b(hoje|agora)\b|\btreino\b.*\b(hoje|peito|costas|pernas|ombros|biceps|triceps|completo|dorian|hit|a|b|c|d)\b/.test(t);
+ if(!request)return [];
+ if(!explicit&&/\b(carga|descans|descanso|recuperacao|tecnica|por que|porque)\b/.test(t))return [];
+ const plan=makePlan(p);const letter=t.match(/\btreino ([a-e])\b/);
+ if(letter)return [plan[Math.min(letter[1].charCodeAt(0)-97,plan.length-1)]];
+ const muscles=[['peito','Peitoral'],['costas','Costas'],['pernas','Pernas'],['ombros','Ombros'],['biceps','Bíceps'],['triceps','Tríceps']];const muscle=muscles.find(([word])=>new RegExp('\\b'+word+'\\b').test(t));
+ if(muscle){const matches=plan.map(w=>({w,score:w.exercises.filter(e=>e.group===muscle[1]||(muscle[0]==='pernas'&&['Pernas','Posterior','Panturrilha'].includes(e.group))).length})).sort((a,b)=>b.score-a.score);return matches[0]?.score?[matches[0].w]:[]}
+ if(/\b(hoje|agora|proximo|proxima)\b/.test(t))return [plan[Math.min(Math.max(0,nextWorkoutId),plan.length-1)]];
+ return plan;
+}
+const boundedText=(v,max)=>typeof v==='string'?v.trim().slice(0,max):'';
+// Persist only the bounded, renderable card shape. Never render HTML or execute provider data.
+export function sanitizeWorkoutCards(value){
+ if(!Array.isArray(value))return [];
+ return value.slice(0,5).filter(w=>w&&Array.isArray(w.exercises)&&w.exercises.length&&typeof w.name==='string').map(w=>({
+ id:Number.isInteger(w.id)&&w.id>=0&&w.id<5?w.id:0,name:boundedText(w.name,100),focus:boundedText(w.focus,120),kind:w.kind==='recovery'?'recovery':'strength',method:boundedText(w.method,80),minutes:Math.min(120,Math.max(10,Number(w.minutes)||35)),intensity:boundedText(w.intensity,100),recovery:boundedText(w.recovery,250),note:boundedText(w.note,350),progression:boundedText(w.progression,300),
+ exercises:w.exercises.slice(0,8).filter(e=>e&&typeof e.name==='string').map(e=>({name:boundedText(e.name,100),group:boundedText(e.group,60),equipment:boundedText(e.equipment,60),tip:boundedText(e.tip,300),sets:Math.min(6,Math.max(1,Math.round(Number(e.sets)||1))),warmupSets:Math.min(3,Math.max(0,Math.round(Number(e.warmupSets)||0))),restSeconds:Math.min(300,Math.max(30,Math.round(Number(e.restSeconds)||90))),reps:boundedText(e.reps,40)}))
+ })).filter(w=>w.exercises.length);
+}

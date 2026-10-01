@@ -1,0 +1,23 @@
+{
+  "name": "rep-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "test": "npm run test:frontend && pytest -q",
+    "test:frontend": "node --test tests/chat-experience.test.mjs tests/style-onboarding.test.mjs tests/workouts.test.mjs",
+    "test:backend": "pytest -q"
+  },
+  "dependencies": {
+    "lucide-react": "^0.468.0",
+    "motion": "^12.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "vite": "^6.1.0"
+  }
+}
