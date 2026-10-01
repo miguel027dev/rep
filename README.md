@@ -47,7 +47,7 @@ Nunca use prefixo `VITE_` para segredos.
 
 - `DATABASE_URL`: URL PostgreSQL.
 - `NVIDIA_API_KEY`: chave server-side da NVIDIA Cloud.
-- `NVIDIA_MODEL`: modelo; padrão do deploy: `openai/gpt-oss-20b`.
+- `NVIDIA_MODEL`: identificador do modelo configurado no provedor de IA.
 - `GOOGLE_CLIENT_ID`: opcional.
 - `GOOGLE_CLIENT_SECRET`: opcional.
 - `AUTH_BASE_URL`: URL pública do serviço, usada no callback OAuth.
@@ -68,6 +68,15 @@ Tabelas:
 - `rep_accounts`
 
 `rep_accounts.state` usa `JSONB` para manter compatibilidade com o formato de estado já esperado pelo frontend.
+
+## Privacidade e LGPD
+
+- `/privacidade`: Política de Privacidade pública, com categorias de dados, finalidades, bases legais, direitos do titular, fornecedores, retenção, segurança e transferências internacionais.
+- `/termos`: Termos de Uso públicos.
+- `POST /api/privacy/requests`: canal para solicitações de titulares com protocolo e persistência em PostgreSQL.
+- `rep_privacy_requests`: tabela de acompanhamento das solicitações LGPD.
+- O cadastro vincula a aceitação aos Termos e à Política de Privacidade.
+- Informações de lesão, dor ou limitação são opcionais e recebem aviso específico de tratamento por poderem envolver dados sensíveis.
 
 ## Segurança
 
