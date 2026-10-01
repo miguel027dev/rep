@@ -63,17 +63,7 @@ def resolve_identity():
                     return dict(row)
         except Exception:
             return None
-    if request.cookies.get("rep_local") == "1":
-        return None
-    user_id = request.headers.get("oai-authenticated-user-id")
-    email = request.headers.get("oai-authenticated-user-email")
-    if not user_id or not email:
-        return None
-    name = ""
-    if request.headers.get("oai-authenticated-user-full-name-encoding") == "percent-encoded-utf-8":
-        from urllib.parse import unquote
-        name = unquote(request.headers.get("oai-authenticated-user-full-name", ""))
-    return {"id": user_id, "email": email, "name": name, "provider": "chatgpt"}
+    return None
 
 
 def new_session(user_id):
