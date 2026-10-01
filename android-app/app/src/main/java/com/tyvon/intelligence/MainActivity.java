@@ -1,4 +1,4 @@
-package com.rep.intelligence;
+package com.tyvon.intelligence;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -19,14 +19,14 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
-    private static final String REP_URL = "https://rep-performance-studio.miguel2341321.chatgpt.site";
-    private static final String REP_HOST = "rep-performance-studio.miguel2341321.chatgpt.site";
+    private static final String TYVON_URL = "https://rep-kky9.onrender.com";
+    private static final String TYVON_HOST = "rep-kky9.onrender.com";
     private WebView webView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setTheme(R.style.Theme_REP);
+        setTheme(R.style.Theme_Tyvon);
         getWindow().setStatusBarColor(Color.BLACK);
         getWindow().setNavigationBarColor(Color.BLACK);
         getWindow().getDecorView().setSystemUiVisibility(0);
@@ -37,7 +37,7 @@ public class MainActivity extends Activity {
         setContentView(webView);
         configureWebView();
 
-        if (savedInstanceState == null) webView.loadUrl(REP_URL);
+        if (savedInstanceState == null) webView.loadUrl(TYVON_URL);
         else webView.restoreState(savedInstanceState);
     }
 
@@ -53,7 +53,7 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         settings.setMediaPlaybackRequiresUserGesture(false);
-        settings.setUserAgentString(settings.getUserAgentString() + " REP-Android/1.0");
+        settings.setUserAgentString(settings.getUserAgentString() + " TYVON-Android/1.0");
         if (android.os.Build.VERSION.SDK_INT >= 26) settings.setSafeBrowsingEnabled(true);
 
         CookieManager.getInstance().setAcceptCookie(true);
@@ -87,7 +87,7 @@ public class MainActivity extends Activity {
 
     private boolean isTrustedWebFlow(Uri uri) {
         String host = uri.getHost();
-        return REP_HOST.equals(host)
+        return TYVON_HOST.equals(host)
             || "accounts.google.com".equals(host)
             || (host != null && host.endsWith(".google.com"))
             || (host != null && host.endsWith(".googleusercontent.com"));
@@ -102,16 +102,16 @@ public class MainActivity extends Activity {
     }
 
     private void showOfflinePage() {
-        String detail = isOnline() ? "Não conseguimos abrir o REP agora." : "Parece que você está sem internet.";
+        String detail = isOnline() ? "Não conseguimos abrir o TYVON agora." : "Parece que você está sem internet.";
         String html = "<!doctype html><meta name='viewport' content='width=device-width,initial-scale=1'>"
             + "<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#090909;color:#f5f5f1;font:16px Arial;display:grid;place-items:center;padding:28px}"
             + "main{width:100%;max-width:420px;text-align:center}.logo{font-size:30px;font-weight:900;letter-spacing:-2px;margin-bottom:64px}"
             + "i{display:block;width:64px;height:64px;border-radius:22px;background:#eee;color:#111;margin:0 auto 22px;padding-top:19px;font-style:normal;font-weight:900}"
             + "h1{font-size:34px;line-height:1;margin:0 0 12px;letter-spacing:-2px}p{color:#888;line-height:1.5;margin:0 0 30px}"
             + "button{width:100%;height:58px;border:0;border-radius:18px;background:#eee;color:#111;font-weight:800;font-size:15px}</style>"
-            + "<main><div class='logo'>R&nbsp;&nbsp; REP</div><i>R</i><h1>Voltamos em um instante.</h1><p>" + detail + " Confira sua conexão e tente novamente.</p>"
-            + "<button onclick=\"location.href='" + REP_URL + "'\">Tentar novamente</button></main>";
-        webView.loadDataWithBaseURL(REP_URL, html, "text/html", "UTF-8", null);
+            + "<main><div class='logo'>TYVON</div><i>T</i><h1>Voltamos em um instante.</h1><p>" + detail + " Confira sua conexão e tente novamente.</p>"
+            + "<button onclick=\"location.href='" + TYVON_URL + "'\">Tentar novamente</button></main>";
+        webView.loadDataWithBaseURL(TYVON_URL, html, "text/html", "UTF-8", null);
     }
 
     @Override

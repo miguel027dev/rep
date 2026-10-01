@@ -83,7 +83,7 @@ def make_plan(p=None):
     if days == 5 or (minor and days >= 4):
         resistance.append({
             "id": len(resistance), "name": "Recuperação ativa", "focus": "Mobilidade · movimento leve", "kind": "recovery",
-            "method": "RECUPERAÇÃO · REP", "minutes": 25, "intensity": "Ritmo confortável",
+            "method": "RECUPERAÇÃO · TYVON", "minutes": 25, "intensity": "Ritmo confortável",
             "recovery": "Recuperar também faz parte do plano.",
             "note": "Este quinto dia é leve. Ele não acrescenta outra sessão intensa de musculação.",
             "progression": "Mantenha um ritmo em que consiga conversar sem dificuldade.",

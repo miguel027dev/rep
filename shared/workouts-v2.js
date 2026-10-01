@@ -83,7 +83,7 @@ export function makePlanV2(p={},logs=[]){
  const minor=Number.isInteger(p.age)&&p.age<18,restricted=!!p.limitations&&p.limitations!=='Nenhuma',minutes=Math.min(75,Math.max(25,Number(p.sessionMinutes)||50));
  const maxExercises=minutes<=35?4:minutes<=50?5:6;
  return templates(p).map(([name,focus,moves],id)=>({
-   id,name,focus,kind:'strength',method:minor?'REP V2 · técnica supervisionada':'REP V2 · Adaptive',
+   id,name,focus,kind:'strength',method:minor?'TYVON V2 · técnica supervisionada':'TYVON V2 · Adaptive',
    minutes,intensity:minor?'3–4 repetições de reserva':p.experience==='Iniciante'?'2–3 repetições de reserva':'1–3 repetições de reserva',
    recovery:'Distribua as sessões para recuperar os mesmos grupos musculares antes de treiná-los pesado novamente.',
    note:minor?'A V2 mantém técnica, supervisão e progressão de carga com profissional como prioridade.':restricted?'Sua restrição continua ativa. O plano não substitui avaliação profissional.':'A V2 preserva exercícios por várias semanas e adapta volume/carga a partir do que você registra.',
@@ -106,6 +106,6 @@ export function selectWorkoutCardsV2(text,p,logs=[],nextWorkoutId=0){
 }
 export function workoutSummaryV2(workouts,profile={}){
  const first=String(profile.name||'').split(' ')[0],prefix=first&&first!=='Você'?first+', ':'';
- if(workouts.length===1){const w=workouts[0];return `${prefix}o REP V2 separou ${w.name.toLowerCase()} para hoje. O card usa seu histórico recente para manter a progressão previsível.\n\nRegistre reps e RIR em cada série: é isso que alimenta a próxima recomendação.`}
+ if(workouts.length===1){const w=workouts[0];return `${prefix}o TYVON V2 separou ${w.name.toLowerCase()} para hoje. O card usa seu histórico recente para manter a progressão previsível.\n\nRegistre reps e RIR em cada série: é isso que alimenta a próxima recomendação.`}
  return `${prefix}sua rotina V2 está nos ${workouts.length} cards abaixo. Ela mantém exercícios estáveis e adapta as próximas referências a partir das séries que você realmente registra.`;
 }

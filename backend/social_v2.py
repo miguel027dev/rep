@@ -17,7 +17,7 @@ def feed():
         with get_db() as conn, conn.cursor() as cur:
             cur.execute("""
               SELECT id, display_name, workout_name, sets, minutes, created_at
-              FROM rep_social_activity
+              FROM tyvon_social_activity
               ORDER BY created_at DESC
               LIMIT 20
             """)
@@ -43,20 +43,20 @@ def share():
         return jsonify({"error":"Resumo inválido."}),400
     try:
         with get_db() as conn, conn.cursor() as cur:
-            cur.execute("SELECT state FROM rep_accounts WHERE user_id=%s",(user["id"],))
+            cur.execute("SELECT state FROM tyvon_accounts WHERE user_id=%s",(user["id"],))
             row=cur.fetchone();state=row["state"] if row else None
             if isinstance(state,str):state=json.loads(state)
             profile=(state or {}).get("profile") if isinstance(state,dict) else {}
             age=profile.get("age") if isinstance(profile,dict) else None
             if not isinstance(age,int) or age<18:
                 return jsonify({"error":"O Circle público está disponível apenas para maiores de 18 anos."}),403
-            cur.execute("SELECT COUNT(*) AS total FROM rep_social_activity WHERE user_id=%s AND created_at>NOW()-INTERVAL '24 hours'",(user["id"],))
+            cur.execute("SELECT COUNT(*) AS total FROM tyvon_social_activity WHERE user_id=%s AND created_at>NOW()-INTERVAL '24 hours'",(user["id"],))
             if cur.fetchone()["total"]>=3:
                 return jsonify({"error":"Limite de 3 compartilhamentos por dia atingido."}),429
             display=str(profile.get("name") or user.get("name") or "Atleta").strip().split(" ")[0][:30] or "Atleta"
             item_id="circle_"+secrets.token_hex(8)
             cur.execute("""
-              INSERT INTO rep_social_activity(id,user_id,display_name,workout_name,sets,minutes)
+              INSERT INTO tyvon_social_activity(id,user_id,display_name,workout_name,sets,minutes)
               VALUES(%s,%s,%s,%s,%s,%s)
             """,(item_id,user["id"],display,workout,sets,minutes))
         return jsonify({"ok":True,"id":item_id}),201

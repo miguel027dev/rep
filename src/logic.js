@@ -7,7 +7,7 @@ export const steps=[
  {key:'experience',question:'Como está sua experiência com a academia?',chips:['Iniciante','Intermediário','Avançado']},
  {key:'equipment',question:'O que você tem disponível para treinar?',chips:['Academia completa','Halteres e banco','Só peso corporal'],hint:'Você também pode escrever uma lista: halteres, barras, cabos…'},
  {key:'days',question:'Quantos dias por semana cabem na sua rotina?',chips:['2 dias','3 dias','4 dias','5 dias']},
- {key:'limitations',question:'Alguma lesão, dor ou restrição que eu deva considerar?',chips:['Nenhuma','Tenho uma restrição'],hint:'Opcional. Se você informar uma condição ou limitação, autoriza o REP a usar esse dado apenas para personalizar alertas de segurança e o plano. Valide o treino com um profissional.'},
+ {key:'limitations',question:'Alguma lesão, dor ou restrição que eu deva considerar?',chips:['Nenhuma','Tenho uma restrição'],hint:'Opcional. Se você informar uma condição ou limitação, autoriza o TYVON a usar esse dado apenas para personalizar alertas de segurança e o plano. Valide o treino com um profissional.'},
  {key:'theme',question:'Para fechar: escolha o estilo do app que você mais gosta.',hint:'A mesma experiência, com a sua personalidade. Você pode trocar no Perfil.'}
 ];
 export function parseAnswer(step,text){
@@ -33,6 +33,6 @@ export function coachReply(text,p){
  if(/equip|casa|halter/.test(t))return `Seu plano considera: ${(p.equipment||sampleProfile.equipment).join(', ')}. Você pode mudar os equipamentos no Perfil; os exercícios se adaptam automaticamente.`;
  if(/descans|recuper|cansa/.test(t))return 'Dê espaço para recuperar entre sessões do mesmo grupo muscular. Seu plano usa 90–150 segundos entre séries principais. O descanso aparece em cada exercício. Se estiver muito cansado, priorize a recuperação.';
  if(/plano|treino|hoje|começ|comec/.test(t))return `Seu foco é ${p.goal.toLowerCase()}, com ${p.days} dias por semana. Vamos juntos! Os cards abaixo mostram seu plano, com os equipamentos que você informou. O plano é demonstrativo e precisa de validação profissional.`;
- if(/aliment|dieta|prote|calor/.test(t))return 'Alimentação também faz parte do processo. Para uma estratégia que considere sua saúde e rotina, converse com um nutricionista. Nesta validação do REP, o foco é a experiência de treino e acompanhamento.';
+ if(/aliment|dieta|prote|calor/.test(t))return 'Alimentação também faz parte do processo. Para uma estratégia que considere sua saúde e rotina, converse com um nutricionista. Nesta validação do TYVON, o foco é a experiência de treino e acompanhamento.';
  return 'Posso te ajudar a entender seu plano, escolher uma carga inicial, organizar o descanso ou ajustar os equipamentos pelo Perfil. Nesta demonstração, minhas respostas seguem cenários preparados. O que você quer explorar?';
 }

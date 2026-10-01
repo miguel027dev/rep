@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@color/rep_black" />
-    <item android:width="104dp" android:height="104dp" android:gravity="center" android:drawable="@drawable/rep_mark" />
+    <item android:drawable="@color/tyvon_black" />
+    <item android:width="104dp" android:height="104dp" android:gravity="center" android:drawable="@drawable/tyvon_mark" />
 </layer-list>

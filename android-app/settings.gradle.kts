@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "REP"
+rootProject.name = "TYVON"
 include(":app")

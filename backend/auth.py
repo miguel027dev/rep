@@ -49,13 +49,13 @@ def same_origin_ok():
 
 
 def resolve_identity():
-    token = request.cookies.get("rep_session", "")
+    token = request.cookies.get("tyvon_session") or request.cookies.get("rep_session", "")
     if token:
         try:
             with get_db() as conn, conn.cursor() as cur:
                 cur.execute("""
                   SELECT u.id, u.email, u.name, u.provider
-                  FROM rep_users u JOIN rep_sessions s ON s.user_id = u.id
+                  FROM tyvon_users u JOIN tyvon_sessions s ON s.user_id = u.id
                   WHERE s.token_hash = %s AND s.expires_at > %s
                 """, (digest(token), now_ms()))
                 row = cur.fetchone()
@@ -69,7 +69,7 @@ def resolve_identity():
 def new_session(user_id):
     token = secrets.token_hex(32)
     with get_db() as conn, conn.cursor() as cur:
-        cur.execute("INSERT INTO rep_sessions (token_hash, user_id, expires_at) VALUES (%s, %s, %s)", (digest(token), user_id, now_ms() + 30 * 86400000))
+        cur.execute("INSERT INTO tyvon_sessions (token_hash, user_id, expires_at) VALUES (%s, %s, %s)", (digest(token), user_id, now_ms() + 30 * 86400000))
     return token
 
 
@@ -102,13 +102,13 @@ def google_start():
         verifier = secrets.token_hex(32)
         challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip("=")
         with get_db() as conn, conn.cursor() as cur:
-            cur.execute("INSERT INTO rep_oauth (state_hash, verifier, expires_at) VALUES (%s,%s,%s)", (digest(state), verifier, now_ms() + 600000))
+            cur.execute("INSERT INTO tyvon_oauth (state_hash, verifier, expires_at) VALUES (%s,%s,%s)", (digest(state), verifier, now_ms() + 600000))
         params = {
             "client_id": os.getenv("GOOGLE_CLIENT_ID"), "redirect_uri": redirect_uri(), "response_type": "code",
             "scope": "openid email profile", "state": state, "code_challenge": challenge, "code_challenge_method": "S256", "prompt": "select_account",
         }
         resp = redirect("https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params), code=302)
-        set_cookie(resp, "rep_oauth", state, 600)
+        set_cookie(resp, "tyvon_oauth", state, 600)
         resp.headers["Cache-Control"] = "no-store"
         return resp
     except Exception:
@@ -120,10 +120,10 @@ def google_callback():
     try:
         state = request.args.get("state", "")
         code = request.args.get("code", "")
-        if not google_configured() or not state or not code or state != request.cookies.get("rep_oauth", ""):
+        if not google_configured() or not state or not code or state not in (request.cookies.get("tyvon_oauth", ""), request.cookies.get("rep_oauth", "")):
             raise RuntimeError("invalid oauth callback")
         with get_db() as conn, conn.cursor() as cur:
-            cur.execute("DELETE FROM rep_oauth WHERE state_hash=%s AND expires_at>%s RETURNING verifier", (digest(state), now_ms()))
+            cur.execute("DELETE FROM tyvon_oauth WHERE state_hash=%s AND expires_at>%s RETURNING verifier", (digest(state), now_ms()))
             flow = cur.fetchone()
         if not flow:
             raise RuntimeError("expired oauth state")
@@ -139,18 +139,21 @@ def google_callback():
         if not info_resp.ok or not person.get("sub") or person.get("email_verified") is not True or not person.get("email"):
             raise RuntimeError("google userinfo failed")
         with get_db() as conn, conn.cursor() as cur:
-            cur.execute("SELECT id,email,name,provider FROM rep_users WHERE google_sub=%s", (person["sub"],))
+            cur.execute("SELECT id,email,name,provider FROM tyvon_users WHERE google_sub=%s", (person["sub"],))
             user = cur.fetchone()
             if not user:
-                user_id = "rep_" + str(uuid.uuid4())
+                user_id = "tyvon_" + str(uuid.uuid4())
                 email = person["email"].lower()
                 name = str(person.get("given_name") or "")[:40]
-                cur.execute("INSERT INTO rep_users (id,email,name,provider,google_sub) VALUES (%s,%s,%s,'google',%s)", (user_id, email, name, person["sub"]))
+                cur.execute("INSERT INTO tyvon_users (id,email,name,provider,google_sub) VALUES (%s,%s,%s,'google',%s)", (user_id, email, name, person["sub"]))
                 user = {"id": user_id, "email": email, "name": name, "provider": "google"}
         session_token = new_session(user["id"])
         resp = redirect("/?welcome=google", code=302)
-        set_cookie(resp, "rep_session", session_token, 30 * 86400)
-        set_cookie(resp, "rep_local", "1", 30 * 86400)
+        set_cookie(resp, "tyvon_session", session_token, 30 * 86400)
+        clear_cookie(resp, "rep_session")
+        set_cookie(resp, "tyvon_local", "1", 30 * 86400)
+        clear_cookie(resp, "rep_local")
+        clear_cookie(resp, "tyvon_oauth")
         clear_cookie(resp, "rep_oauth")
         resp.headers["Cache-Control"] = "no-store"
         return resp
@@ -165,13 +168,14 @@ def logout():
     if not same_origin_ok():
         return jsonify({"error": "Origem não permitida."}), 403
     try:
-        token = request.cookies.get("rep_session", "")
+        token = request.cookies.get("tyvon_session") or request.cookies.get("rep_session", "")
         if token:
             with get_db() as conn, conn.cursor() as cur:
-                cur.execute("DELETE FROM rep_sessions WHERE token_hash=%s", (digest(token),))
+                cur.execute("DELETE FROM tyvon_sessions WHERE token_hash=%s", (digest(token),))
         resp = make_response(jsonify({"ok": True}))
+        clear_cookie(resp, "tyvon_session")
         clear_cookie(resp, "rep_session")
-        set_cookie(resp, "rep_local", "1", 30 * 86400)
+        set_cookie(resp, "tyvon_local", "1", 30 * 86400)
         resp.headers["Cache-Control"] = "no-store"
         return resp
     except Exception:
@@ -206,17 +210,17 @@ def _auth_action(mode):
         rate_key = digest(email + "|" + ip)
         now = now_ms()
         with get_db() as conn, conn.cursor() as cur:
-            cur.execute("SELECT attempts,expires_at FROM rep_auth_limits WHERE id=%s", (rate_key,))
+            cur.execute("SELECT attempts,expires_at FROM tyvon_auth_limits WHERE id=%s", (rate_key,))
             rate = cur.fetchone()
             if rate and rate["expires_at"] > now and rate["attempts"] >= 8:
                 return jsonify({"error": "Muitas tentativas. Aguarde 15 minutos."}), 429
             cur.execute("""
-              INSERT INTO rep_auth_limits (id,attempts,expires_at) VALUES (%s,1,%s)
+              INSERT INTO tyvon_auth_limits (id,attempts,expires_at) VALUES (%s,1,%s)
               ON CONFLICT(id) DO UPDATE SET
-                attempts=CASE WHEN rep_auth_limits.expires_at <= %s THEN 1 ELSE rep_auth_limits.attempts + 1 END,
-                expires_at=CASE WHEN rep_auth_limits.expires_at <= %s THEN EXCLUDED.expires_at ELSE rep_auth_limits.expires_at END
+                attempts=CASE WHEN tyvon_auth_limits.expires_at <= %s THEN 1 ELSE tyvon_auth_limits.attempts + 1 END,
+                expires_at=CASE WHEN tyvon_auth_limits.expires_at <= %s THEN EXCLUDED.expires_at ELSE tyvon_auth_limits.expires_at END
             """, (rate_key, now + 900000, now, now))
-            cur.execute("SELECT * FROM rep_users WHERE email=%s AND provider='password'", (email,))
+            cur.execute("SELECT * FROM tyvon_users WHERE email=%s AND provider='password'", (email,))
             user = cur.fetchone()
             if mode == "register":
                 if body.get("accepted") is not True:
@@ -225,18 +229,19 @@ def _auth_action(mode):
                     return jsonify({"error": "Este e-mail já tem uma conta. Entre com sua senha."}), 409
                 salt = secrets.token_hex(32)
                 pw_hash = password_hash(password, salt)
-                user = {"id": "rep_" + str(uuid.uuid4()), "email": email, "name": "", "provider": "password"}
-                cur.execute("INSERT INTO rep_users (id,email,name,provider,password_hash,salt) VALUES (%s,%s,'','password',%s,%s)", (user["id"], email, pw_hash, salt))
+                user = {"id": "tyvon_" + str(uuid.uuid4()), "email": email, "name": "", "provider": "password"}
+                cur.execute("INSERT INTO tyvon_users (id,email,name,provider,password_hash,salt) VALUES (%s,%s,'','password',%s,%s)", (user["id"], email, pw_hash, salt))
             else:
-                candidate = password_hash(password, user["salt"] if user else "rep-invalid-login-salt")
+                candidate = password_hash(password, user["salt"] if user else "tyvon-invalid-login-salt")
                 expected = user["password_hash"] if user else "0" * 64
                 if not user or not hmac.compare_digest(candidate, expected):
                     return jsonify({"error": "E-mail ou senha incorretos."}), 401
-            cur.execute("DELETE FROM rep_auth_limits WHERE id=%s", (rate_key,))
+            cur.execute("DELETE FROM tyvon_auth_limits WHERE id=%s", (rate_key,))
         token = new_session(user["id"])
         resp = make_response(jsonify({"user": {"id": user["id"], "email": user["email"], "name": user["name"], "provider": user["provider"]}}))
-        set_cookie(resp, "rep_session", token, 30 * 86400)
-        set_cookie(resp, "rep_local", "1", 30 * 86400)
+        set_cookie(resp, "tyvon_session", token, 30 * 86400)
+        clear_cookie(resp, "rep_session")
+        set_cookie(resp, "tyvon_local", "1", 30 * 86400)
         resp.headers["Cache-Control"] = "no-store"
         return resp
     except Exception:

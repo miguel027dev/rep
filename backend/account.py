@@ -45,7 +45,7 @@ def validate_account_state(raw, email):
         profile["priorityMuscles"] = []
     if "age" in p:
         if not isinstance(p["age"], int) or not 13 <= p["age"] <= 100:
-            raise ValueError("O REP está disponível a partir de 13 anos.")
+            raise ValueError("O TYVON está disponível a partir de 13 anos.")
         profile["age"] = p["age"]
     if "weight" in p:
         if not isinstance(p["weight"], (int, float)) or isinstance(p["weight"], bool) or not 30 <= p["weight"] <= 350:
@@ -132,13 +132,13 @@ def account():
     try:
         with get_db() as conn, conn.cursor() as cur:
             if request.method == "GET":
-                cur.execute("SELECT state FROM rep_accounts WHERE user_id=%s", (user["id"],))
+                cur.execute("SELECT state FROM tyvon_accounts WHERE user_id=%s", (user["id"],))
                 row = cur.fetchone()
                 state = row["state"] if row else None
                 if isinstance(state, str): state = json.loads(state)
                 return jsonify({"user": user, "state": state})
             if request.method == "DELETE":
-                cur.execute("DELETE FROM rep_accounts WHERE user_id=%s", (user["id"],))
+                cur.execute("DELETE FROM tyvon_accounts WHERE user_id=%s", (user["id"],))
                 return jsonify({"ok": True})
             if "application/json" not in (request.content_type or ""):
                 return jsonify({"error": "Envie os dados em JSON."}), 415
@@ -153,15 +153,15 @@ def account():
                 return jsonify({"error": str(e)}), 400
             ts = datetime.now(timezone.utc)
             if request.method == "POST":
-                cur.execute("INSERT INTO rep_accounts (user_id,state,updated_at) VALUES (%s,%s,%s) ON CONFLICT(user_id) DO NOTHING RETURNING user_id", (user["id"], Jsonb(state), ts))
+                cur.execute("INSERT INTO tyvon_accounts (user_id,state,updated_at) VALUES (%s,%s,%s) ON CONFLICT(user_id) DO NOTHING RETURNING user_id", (user["id"], Jsonb(state), ts))
                 if not cur.fetchone():
                     return jsonify({"error": "Você já tem um perfil. Entre para continuar.", "code": "PROFILE_EXISTS"}), 409
             else:
                 cur.execute("""
-                  INSERT INTO rep_accounts (user_id,state,updated_at) VALUES (%s,%s,%s)
+                  INSERT INTO tyvon_accounts (user_id,state,updated_at) VALUES (%s,%s,%s)
                   ON CONFLICT(user_id) DO UPDATE SET state=EXCLUDED.state, updated_at=EXCLUDED.updated_at
                 """, (user["id"], Jsonb(state), ts))
             return jsonify({"ok": True, "state": state})
     except Exception as e:
-        print("REP account storage error", str(e), flush=True)
+        print("TYVON account storage error", str(e), flush=True)
         return jsonify({"error": "Não foi possível acessar seu perfil. Tente novamente.", "code": "STORAGE_UNAVAILABLE"}), 503

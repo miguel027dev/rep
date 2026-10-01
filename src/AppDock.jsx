@@ -1,6 +1,6 @@
 /** Navigation adaptation of Kokonut UI Smooth Tab (@dorianbaffier, MIT).
  * https://github.com/kokonut-labs/kokonutui/blob/main/components/kokonutui/smooth-tab.tsx
- * Same spring-driven sliding background, adapted to five REP app destinations.
+ * Same spring-driven sliding background, adapted to five TYVON app destinations.
  */
 import React,{useLayoutEffect,useRef,useState} from 'react';
 import {motion,useReducedMotion} from 'motion/react';

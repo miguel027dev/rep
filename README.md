@@ -1,6 +1,6 @@
-# REP — Flask + PostgreSQL
+# TYVON — Flask + PostgreSQL
 
-Aplicativo REP com o frontend React/Vite original preservado e backend migrado para **Flask** com **PostgreSQL**.
+Aplicativo TYVON com o frontend React/Vite original preservado e backend migrado para **Flask** com **PostgreSQL**.
 
 ## Arquitetura
 
@@ -61,17 +61,17 @@ O backend inicializa as tabelas idempotentemente no primeiro request com `DATABA
 
 Tabelas:
 
-- `rep_users`
-- `rep_sessions`
-- `rep_oauth`
-- `rep_auth_limits`
-- `rep_accounts`
+- `tyvon_users`
+- `tyvon_sessions`
+- `tyvon_oauth`
+- `tyvon_auth_limits`
+- `tyvon_accounts`
 
-`rep_accounts.state` usa `JSONB` para manter compatibilidade com o formato de estado já esperado pelo frontend.
+`tyvon_accounts.state` usa `JSONB` para manter compatibilidade com o formato de estado já esperado pelo frontend.
 
-## REP V1 e REP V2
+## TYVON V1 e TYVON V2
 
-A experiência original permanece disponível como **REP V1**. O usuário pode ativar ou desativar a **REP V2** pelo Perfil sem apagar histórico.
+A experiência original permanece disponível como **TYVON V1**. O usuário pode ativar ou desativar a **TYVON V2** pelo Perfil sem apagar histórico.
 
 A V2 adiciona:
 
@@ -82,7 +82,7 @@ A V2 adiciona:
 - configuração de duração por sessão e até três grupos musculares prioritários;
 - analytics de séries, repetições e volume registrado;
 - contexto V2 enviado server-side para o chat NVIDIA;
-- REP Circle com compartilhamento manual de resumos estruturados;
+- TYVON Circle com compartilhamento manual de resumos estruturados;
 - Circle público desativado para menores de 18 anos;
 - progressão automática de carga desativada para menores de 18 anos.
 
@@ -93,7 +93,7 @@ A V1 continua usando o motor anterior e não é sobrescrita pela V2.
 - `/privacidade`: Política de Privacidade pública, com categorias de dados, finalidades, bases legais, direitos do titular, fornecedores, retenção, segurança e transferências internacionais.
 - `/termos`: Termos de Uso públicos.
 - `POST /api/privacy/requests`: canal para solicitações de titulares com protocolo e persistência em PostgreSQL.
-- `rep_privacy_requests`: tabela de acompanhamento das solicitações LGPD.
+- `tyvon_privacy_requests`: tabela de acompanhamento das solicitações LGPD.
 - O cadastro vincula a aceitação aos Termos e à Política de Privacidade.
 - Informações de lesão, dor ou limitação são opcionais e recebem aviso específico de tratamento por poderem envolver dados sensíveis.
 

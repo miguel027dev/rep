@@ -1,14 +1,14 @@
 <resources>
-    <style name="Theme.REP" parent="android:style/Theme.Material.NoActionBar">
+    <style name="Theme.Tyvon" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:statusBarColor">@color/rep_black</item>
-        <item name="android:navigationBarColor">@color/rep_black</item>
-        <item name="android:windowBackground">@color/rep_black</item>
-        <item name="android:colorAccent">@color/rep_white</item>
+        <item name="android:statusBarColor">@color/tyvon_black</item>
+        <item name="android:navigationBarColor">@color/tyvon_black</item>
+        <item name="android:windowBackground">@color/tyvon_black</item>
+        <item name="android:colorAccent">@color/tyvon_white</item>
     </style>
-    <style name="Theme.REP.Starting" parent="Theme.REP">
+    <style name="Theme.Tyvon.Starting" parent="Theme.Tyvon">
         <item name="android:windowBackground">@drawable/launch_background</item>
     </style>
 </resources>

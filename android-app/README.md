@@ -1,6 +1,6 @@
-# REP Android
+# TYVON Android
 
-Aplicativo Android WebView do REP. Ele abre a versão publicada em `rep-performance-studio.miguel2341321.chatgpt.site`, preserva a sessão da conta, bloqueia conteúdo HTTP e envia links externos ao navegador.
+Aplicativo Android WebView do TYVON. Ele abre a versão publicada em `rep-kky9.onrender.com`, preserva a sessão da conta, bloqueia conteúdo HTTP e envia links externos ao navegador.
 
 ## Compilar
 

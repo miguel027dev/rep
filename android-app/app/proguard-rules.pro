@@ -1,3 +1,3 @@
--keepclassmembers class com.rep.intelligence.MainActivity$RepBridge {
+-keepclassmembers class com.tyvon.intelligence.MainActivity$TyvonBridge {
     public *;
 }

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-// REP's companion is a real articulated object, shared by the live UI and launch film.
+// TYVON's companion is a real articulated object, shared by the live UI and launch film.
 export function createRobotScene(canvas,{size=400,alpha=true,interactive=true,reducedMotion=false}={}){
  const renderer=new THREE.WebGLRenderer({canvas,alpha,antialias:true,powerPreference:'low-power',preserveDrawingBuffer:true});
  renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio||1,2));renderer.setSize(size,size,false);renderer.setClearColor(0x000000,alpha?0:1);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;

@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "com.rep.intelligence"
+    namespace = "com.tyvon.intelligence"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.rep.intelligence"
+        applicationId = "com.tyvon.intelligence"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

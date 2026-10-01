@@ -29,17 +29,17 @@ def create_privacy_request():
         return jsonify({"error": "Descreva sua solicitação."}), 400
 
     user = resolve_identity()
-    protocol = "REP-LGPD-" + secrets.token_hex(5).upper()
+    protocol = "TYVON-LGPD-" + secrets.token_hex(5).upper()
 
     with get_db() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT COUNT(*) AS total FROM rep_privacy_requests WHERE email=%s AND created_at > NOW() - INTERVAL '24 hours'",
+            "SELECT COUNT(*) AS total FROM tyvon_privacy_requests WHERE email=%s AND created_at > NOW() - INTERVAL '24 hours'",
             (email,),
         )
         if cur.fetchone()["total"] >= 5:
             return jsonify({"error": "Limite de solicitações atingido. Tente novamente mais tarde."}), 429
         cur.execute(
-            """INSERT INTO rep_privacy_requests
+            """INSERT INTO tyvon_privacy_requests
                (id, user_id, email, kind, details, status)
                VALUES (%s, %s, %s, %s, %s, 'received')""",
             (protocol, user["id"] if user else None, email, kind, details),

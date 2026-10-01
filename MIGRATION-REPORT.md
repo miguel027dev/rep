@@ -1,8 +1,8 @@
-# REP — relatório de migração
+# TYVON — relatório de migração
 
 ## Objetivo
 
-Migrar o backend do REP de Cloudflare Worker + D1 para Flask + PostgreSQL sem alterar o design/frontend.
+Migrar o backend do TYVON de Cloudflare Worker + D1 para Flask + PostgreSQL sem alterar o design/frontend.
 
 ## Resultado
 
@@ -27,7 +27,7 @@ O ambiente de execução usado para a migração não consegue resolver `registr
 
 ## Render
 
-Em 1 de outubro de 2026 foi criado no workspace `miguelpinxs@gmail.com` o PostgreSQL `rep-db`, plano free, região Oregon, PostgreSQL 18. O banco ficou com status `available`.
+Em 1 de outubro de 2026 foi criado no workspace `miguelpinxs@gmail.com` o PostgreSQL `tyvon-db`, plano free, região Oregon, PostgreSQL 18. O banco ficou com status `available`.
 
 A conexão externa do banco permanece bloqueada (allowlist vazia), que é a configuração mais segura. O Web Service deve usar a URL interna do banco via `DATABASE_URL`.
 
