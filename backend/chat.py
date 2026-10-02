@@ -118,7 +118,7 @@ def _ai_rate_limit(user_id):
 
 @chat_bp.get("/api/chat/status")
 def chat_status():
-    return jsonify({"configured": bool(os.getenv("NVIDIA_API_KEY")), "streamProtocol": "tyvon-v1"})
+    return jsonify({"configured": bool(os.getenv("NVIDIA_API_KEY")), "streamProtocol": "tyvon"})
 
 
 @chat_bp.post("/api/chat")
@@ -168,7 +168,7 @@ def chat():
 
     reference_plan = make_plan(profile) if profile.get("complete") else []
     age_policy = (
-        "USUÁRIO 13–17: orientação conservadora, foco em técnica e supervisão; não recomende falha, testes máximos, metas de emagrecimento ou progressão agressiva."
+        "USUÁRIO 14–17: orientação conservadora, foco em técnica e supervisão; não recomende falha, testes máximos, metas de emagrecimento ou progressão agressiva."
         if profile.get("age") and profile["age"] < 18
         else "Se a idade não estiver disponível, use abordagem conservadora."
     )
