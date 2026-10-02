@@ -315,23 +315,32 @@ def auth_action(mode):
         if not allowed:
             return jsonify({"error": "Muitas tentativas. Aguarde 15 minutos.", "code": "RATE_LIMIT"}), 429
         with conn.cursor() as cur:
-            cur.execute("SELECT * FROM tyvon_users WHERE email=%s AND password_hash IS NOT NULL ORDER BY created_at LIMIT 1", (email,))
+            cur.execute("SELECT * FROM tyvon_users WHERE email=%s ORDER BY (password_hash IS NOT NULL) DESC, created_at ASC LIMIT 1", (email,))
             user = cur.fetchone()
             if mode == "register":
                 if body.get("accepted") is not True:
                     return jsonify({"error": "Confirme que você tem pelo menos 13 anos e aceita os Termos e a Política de Privacidade."}), 400
-                if user:
+                if user and user.get("password_hash"):
                     return jsonify({"error": "Este e-mail já tem uma conta. Entre com sua senha."}), 409
-                user_id = "tyvon_" + str(uuid.uuid4())
-                cur.execute(
-                    "INSERT INTO tyvon_users(id,email,name,provider,password_hash,password_algo,email_verified) VALUES(%s,%s,'','password',%s,'argon2id',FALSE)",
-                    (user_id, email, hash_password(password)),
-                )
+                password_value = hash_password(password)
+                if user:
+                    user = dict(user)
+                    cur.execute(
+                        "UPDATE tyvon_users SET password_hash=%s,password_algo='argon2id',salt=NULL,updated_at=NOW() WHERE id=%s",
+                        (password_value, user["id"]),
+                    )
+                    user["password_hash"] = password_value
+                else:
+                    user_id = "tyvon_" + str(uuid.uuid4())
+                    cur.execute(
+                        "INSERT INTO tyvon_users(id,email,name,provider,password_hash,password_algo,email_verified) VALUES(%s,%s,'','password',%s,'argon2id',FALSE)",
+                        (user_id, email, password_value),
+                    )
+                    user = {"id": user_id, "email": email, "name": "", "provider": "password", "email_verified": False, "password_hash": password_value}
                 cur.execute(
                     "INSERT INTO tyvon_consents(user_id,terms_version,privacy_version,sensitive_personalization) VALUES(%s,%s,%s,FALSE) ON CONFLICT(user_id) DO NOTHING",
-                    (user_id, TERMS_VERSION, PRIVACY_VERSION),
+                    (user["id"], TERMS_VERSION, PRIVACY_VERSION),
                 )
-                user = {"id": user_id, "email": email, "name": "", "provider": "password", "email_verified": False}
             else:
                 if not user:
                     return jsonify({"error": "E-mail ou senha incorretos."}), 401
