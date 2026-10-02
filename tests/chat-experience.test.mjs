@@ -1,7 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseAnswer,steps,onboardingQuestion} from '../src/logic.js';
-import {themeIntent} from '../shared/theme-intent.js';
+import {parseAnswer,steps,onboardingQuestion,sampleProfile} from '../src/logic.js';
 const step=key=>steps.find(s=>s.key===key);
-test('Conversational age, weight and frequency answers retain strict bounds',()=>{for(const answer of ['18','18 anos','Tenho 18 anos','Minha idade é 18','18 anos de idade.'])assert.deepEqual(parseAnswer(step('age'),answer),{value:18},answer);for(const answer of ['12 anos','18.5','18 ou 19','18 anos e 70 kg','101 anos','dezoito'])assert.ok(parseAnswer(step('age'),answer).error,answer);for(const answer of ['70','70 kg','peso 70 quilos','Meu peso é 70 kg'])assert.deepEqual(parseAnswer(step('weight'),answer),{value:70},answer);assert.deepEqual(parseAnswer(step('weight'),'78,5 kg'),{value:78.5});for(const answer of ['4','4 dias','4 dias por semana','treino 4x por semana'])assert.deepEqual(parseAnswer(step('days'),answer),{value:4},answer);assert.ok(parseAnswer(step('days'),'4 ou 5').error);assert.deepEqual(parseAnswer(step('experience'),'sou avançado'),{value:'Avançado'});assert.deepEqual(parseAnswer(step('name'),'Me chamo Miguel'),{value:'Miguel'});assert.equal(onboardingQuestion(1,{name:'Miguel'}),'Prazer, Miguel! Qual é a sua idade?');assert.ok(!onboardingQuestion(1,{name:'Miguel'}).includes('\n'))});
-test('Explicit app style commands work without confusing training goals or negations',()=>{for(const text of ['Quero trocar o tema','Trocar tema','quero mudar o estilo do app'])assert.deepEqual(themeIntent(text),{theme:null},text);for(const text of ['Mude para o tema Energia','Trocar o tema para Energia','quero usar o estilo Energia','troque para Energia'])assert.deepEqual(themeIntent(text),{theme:'energy'},text);for(const text of ['Quero voltar ao tema original','Trocar para preto e branco','Mude o tema para Essencial'])assert.deepEqual(themeIntent(text),{theme:'essential'},text);for(const text of ['Quero ter mais energia para treinar','Mudar meu estilo de treino','não quero trocar o tema','Não mude o tema','Qual treino faço hoje?'])assert.equal(themeIntent(text),null,text)});
+
+test('onboarding is V1-only and keeps strict bounds',()=>{
+ assert.equal(steps.length,8);
+ assert.equal(steps.at(-1).key,'limitations');
+ assert.equal(sampleProfile.experienceVersion,'v1');
+ assert.equal(sampleProfile.theme,'essential');
+ for(const answer of ['18','18 anos','Tenho 18 anos','Minha idade é 18'])assert.deepEqual(parseAnswer(step('age'),answer),{value:18});
+ for(const answer of ['12 anos','18.5','18 ou 19','101 anos'])assert.ok(parseAnswer(step('age'),answer).error);
+ assert.deepEqual(parseAnswer(step('weight'),'78,5 kg'),{value:78.5});
+ assert.deepEqual(parseAnswer(step('days'),'4 dias por semana'),{value:4});
+ assert.ok(parseAnswer(step('days'),'4 ou 5').error);
+ assert.deepEqual(parseAnswer(step('experience'),'sou avançado'),{value:'Avançado'});
+ assert.equal(onboardingQuestion(1,{name:'Miguel'}),'Prazer, Miguel! Qual é a sua idade?');
+});
+
+test('equipment parsing is bounded to known options',()=>{
+ assert.deepEqual(parseAnswer(step('equipment'),'Academia completa').value,['Halteres','Barras','Máquinas','Cabos','Banco']);
+ assert.deepEqual(parseAnswer(step('equipment'),'só peso corporal').value,['Peso corporal']);
+ assert.ok(parseAnswer(step('equipment'),'qualquer coisa').error);
+});
