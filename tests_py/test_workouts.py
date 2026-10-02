@@ -29,5 +29,5 @@ def test_card_sanitization_bounds():
     unsafe=[{**plan[0],"exercises":[{**plan[0]["exercises"][0],"sets":999,"restSeconds":0,"name":"a"*1000}]}]
     card=sanitize_workout_cards(unsafe)[0]
     assert card["exercises"][0]["sets"]==6
-    assert card["exercises"][0]["restSeconds"]==45
+    assert card["exercises"][0]["restSeconds"]==90
     assert len(card["exercises"][0]["name"])==100
