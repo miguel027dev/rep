@@ -16,8 +16,8 @@ def normalize_profile(raw, email=""):
     if any(x not in EQUIPMENT for x in equipment):
         raise ValueError("Equipamento inválido.")
     age = raw.get("age")
-    if age is not None and (not isinstance(age, int) or isinstance(age, bool) or not 13 <= age <= 100):
-        raise ValueError("O TYVON está disponível a partir de 13 anos.")
+    if age is not None and (not isinstance(age, int) or isinstance(age, bool) or not 14 <= age <= 100):
+        raise ValueError("O TYVON está disponível a partir de 14 anos.")
     weight = raw.get("weight")
     if weight is not None and (not isinstance(weight, (int, float)) or isinstance(weight, bool) or not 30 <= weight <= 350):
         raise ValueError("Peso inválido.")
