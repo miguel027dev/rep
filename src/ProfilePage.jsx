@@ -38,8 +38,8 @@ async function pngFromSvg(svg){
 }
 
 export default function ProfilePage({p,user,logs,setProfile,notify,reset,signOut}){
- const [edit,setEdit]=useState({...p,theme:'essential',experienceVersion:'v1'}),[sharing,setSharing]=useState(''),[privacy,setPrivacy]=useState([]),[deleting,setDeleting]=useState(false),[verifyState,setVerifyState]=useState('');
- useEffect(()=>setEdit({...p,theme:'essential',experienceVersion:'v1'}),[p]);
+ const [edit,setEdit]=useState({...p}),[sharing,setSharing]=useState(''),[privacy,setPrivacy]=useState([]),[deleting,setDeleting]=useState(false),[verifyState,setVerifyState]=useState('');
+ useEffect(()=>setEdit({...p}),[p]);
  useEffect(()=>{apiFetch('/api/privacy/requests/me').then(r=>r.ok?r.json():{items:[]}).then(d=>setPrivacy(d.items||[])).catch(()=>{})},[]);
  const weekStart=useMemo(()=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d},[]);
  const weekly=logs.filter(l=>new Date(l.date)>=weekStart),minutes=Math.round(logs.reduce((a,l)=>a+Number(l.minutes||0),0));
@@ -63,7 +63,7 @@ export default function ProfilePage({p,user,logs,setProfile,notify,reset,signOut
  function save(e){
   e.preventDefault();
   if(!edit.equipment?.length){notify('Selecione pelo menos um equipamento.');return}
-  const next={...edit,theme:'essential',experienceVersion:'v1',complete:true};
+  const next={...edit,complete:true};
   if(next.age<18&&next.goal==='Perder gordura')next.goal='Criar uma rotina';
   setProfile(next);notify('Perfil atualizado. Seu plano foi recalculado.');
  }
