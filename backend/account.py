@@ -124,7 +124,7 @@ def validate_account_state(raw, email):
                 "weights": weights,
                 "setLogs": set_logs,
                 "feedback": feedback,
-                "engine": "v1",
+                "engine": "tyvon",
             })
     return {"profile": profile, "messages": messages, "logs": logs, "step": step}
 
@@ -208,7 +208,7 @@ def load_state(conn, user_id, email):
             "weights": _as_json(row["weights"], {}),
             "setLogs": sets_by_log.get(row["id"], []),
             "feedback": _as_json(row["feedback"], {}),
-            "engine": "v1",
+            "engine": "tyvon",
         })
     return {"profile": profile, "messages": messages, "logs": logs, "step": int(meta["step"])}, int(meta["revision"])
 
@@ -261,7 +261,7 @@ def persist_state(conn, user_id, email, raw, expected_revision=None, migration_m
                     occurred_at = occurred_at.replace(tzinfo=timezone.utc)
                 cur.execute("""
                   INSERT INTO tyvon_workout_logs(id,user_id,name,occurred_at,minutes,sets,weights,feedback,engine)
-                  VALUES(%s,%s,%s,%s,%s,%s,%s,%s,'v1')
+                  VALUES(%s,%s,%s,%s,%s,%s,%s,%s,'tyvon')
                 """, (
                     log["id"], user_id, log["name"], occurred_at, log["minutes"], log["sets"],
                     Jsonb(log["weights"]), Jsonb(log["feedback"]),
