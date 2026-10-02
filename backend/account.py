@@ -184,8 +184,6 @@ def load_state(conn, user_id, email):
         "days": profile_row["days"],
         "limitations": profile_row["limitations"] or "Nenhuma",
         "complete": bool(profile_row["complete"]),
-        "theme": "essential",
-        "experienceVersion": "v1",
     }
     messages = []
     for row in message_rows:
