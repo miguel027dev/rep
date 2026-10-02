@@ -134,7 +134,7 @@ function App(){
    <footer><Logo small/><span>TYVON · PERFORMANCE</span><span className="footer-right">TYVON · PRIVACIDADE POR PADRÃO</span></footer>
   </div>
   <AppDock items={nav} selected={route} onChange={go}/>
-  <AnimatePresence>{activeWorkout&&<WorkoutSession workout={activeWorkout} finish={finish} close={()=>setActiveWorkout(null)} restricted={p.limitations&&p.limitations!=='Nenhuma'}/>}</AnimatePresence>
+  <AnimatePresence>{activeWorkout&&<WorkoutSession workout={activeWorkout} logs={logs} finish={finish} close={()=>setActiveWorkout(null)} restricted={p.limitations&&p.limitations!=='Nenhuma'}/>}</AnimatePresence>
   <AnimatePresence>{planReveal&&<WorkoutReveal profile={planReveal} plan={makePlan(planReveal)} onStart={w=>{setPlanReveal(null);setActiveWorkout(w)}} onClose={()=>{setPlanReveal(null);go('overview')}}/>}</AnimatePresence>
   {toast&&<div className="toast" role="status">{toast}</div>}
  </div></>;
