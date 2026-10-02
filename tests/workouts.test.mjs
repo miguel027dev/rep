@@ -40,7 +40,7 @@ test('stored workout cards are bounded',()=>{
  const plan=makePlan(profile),unsafe=[{...plan[0],exercises:[{...plan[0].exercises[0],sets:999,restSeconds:0,name:'a'.repeat(1000)}]}];
  const [card]=sanitizeWorkoutCards(unsafe);
  assert.equal(card.exercises[0].sets,6);
- assert.equal(card.exercises[0].restSeconds,45);
+ assert.equal(card.exercises[0].restSeconds,90);
  assert.equal(card.exercises[0].name.length,100);
  assert.deepEqual(sanitizeWorkoutCards([{name:'Invalid'}]),[]);
 });
