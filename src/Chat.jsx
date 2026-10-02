@@ -1,63 +1,109 @@
-import React,{useState,useEffect,useLayoutEffect,useRef} from 'react';
-import {motion,AnimatePresence} from 'motion/react';
-import {ArrowRight,ArrowUpRight,Dumbbell,ChevronLeft,RotateCcw} from 'lucide-react';
+import React,{useEffect,useLayoutEffect,useRef,useState} from 'react';
+import {AnimatePresence,motion} from 'motion/react';
+import {ArrowUpRight,ChevronLeft,RotateCcw} from 'lucide-react';
 import ShinyText from './ShinyText';
 import Bot from './Bot';
 import {readableResponse} from './brand/chat-response';
 import PromptInput from './PromptInput';
 import WorkoutCards from './WorkoutCards';
-import ThemePicker,{appStyles} from './ThemePicker';
 import {makePlan,selectWorkoutCards,sanitizeWorkoutCards} from '../shared/workouts.js';
 import {steps,parseAnswer,coachReply,onboardingQuestion} from './logic';
-import {themeIntent} from '../shared/theme-intent';
-function plainResponse(text,cards){return readableResponse(text,{fallback:cards?.length?'Seu treino está nos cards abaixo. Vamos fazer cada movimento com calma.':''})}
-export default function Chat({request,clearRequest,profile,p,setProfile,messages,setMessages,onboard,step,setStep,completed,plan,go,create,saveStatus,start,nextWorkoutId=0}){
- const [busy,setBusy]=useState(false),[thinking,setThinking]=useState(false),[connection,setConnection]=useState(null),[preview,setPreview]=useState(false),[error,setError]=useState('');const historyContainer=useRef(null),followBottom=useRef(true),timer=useRef(null),controller=useRef(null);const current=step===3&&profile?.age<18?{...steps[step],chips:['Ganhar massa muscular','Melhorar condicionamento','Criar uma rotina']}:steps[step];
- const [themeDraft,setThemeDraft]=useState(profile?.theme||'essential');const choosingStyle=onboard&&current?.key==='theme';const [styleEditor,setStyleEditor]=useState(!onboard&&messages.at(-1)?.stylePicker===true);
- const history=messages.length?messages:[{role:'ai',text:`${p.name}, o que você quer melhorar hoje?`,intro:true}];
- useEffect(()=>{const c=new AbortController();fetch('/api/chat/status',{signal:c.signal}).then(r=>r.ok?r.json():Promise.reject()).then(setConnection).catch(()=>{if(!c.signal.aborted)setConnection({configured:false})});return()=>{c.abort();clearTimeout(timer.current);controller.current?.abort()}},[]);
- useLayoutEffect(()=>{const el=historyContainer.current;if(el&&followBottom.current){const last=messages.at(-1);if(last?.role==='ai'&&(last.workouts?.length||last.stylePicker)){const replies=el.querySelectorAll('.message'),reply=replies[replies.length-1];if(reply)el.scrollTop+=reply.getBoundingClientRect().top-el.getBoundingClientRect().top-16;else el.scrollTop=el.scrollHeight}else el.scrollTop=el.scrollHeight}},[messages,thinking,styleEditor]);
- useEffect(()=>{const previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';const viewport=window.visualViewport;let frame;function resize(){cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>{document.documentElement.style.setProperty('--chat-height',(viewport?.height||window.innerHeight)+'px');document.documentElement.style.setProperty('--chat-top',(viewport?.offsetTop||0)+'px')})}resize();viewport?.addEventListener('resize',resize);viewport?.addEventListener('scroll',resize);window.addEventListener('resize',resize);return()=>{document.body.style.overflow=previousOverflow;cancelAnimationFrame(frame);viewport?.removeEventListener('resize',resize);viewport?.removeEventListener('scroll',resize);window.removeEventListener('resize',resize);document.documentElement.style.removeProperty('--chat-height');document.documentElement.style.removeProperty('--chat-top')}},[]);
- useEffect(()=>{if(request&&!onboard&&(connection||themeIntent(request.text))){const text=request.text;clearRequest();send(text)}},[request?.id,connection,onboard]);
- async function send(text,base=messages){
- if(busy)return;setError('');if(text.length>5000){setError('Use até 5.000 caracteres por mensagem.');return}
- const selected=styleEditor?parseAnswer(steps.at(-1),text):null;
- const styleAction=!onboard&&(themeIntent(text)||(selected&&!selected.error?{theme:selected.value}:null));
- if(styleAction){
-  followBottom.current=true;setMessages([...(base.length?base:history),{role:'user',text}]);setBusy(true);setThinking(true);
-  timer.current=setTimeout(()=>{
-   if(styleAction.theme){const style=appStyles.find(s=>s.id===styleAction.theme);setProfile({...profile,theme:style.id});setThemeDraft(style.id);setStyleEditor(false);setMessages(prev=>[...prev,{role:'ai',text:`Pronto, ${p.name.split(' ')[0]}! Agora seu TYVON está no estilo ${style.name}. Seu plano e sua conversa continuam aqui.`}])}
-   else{setThemeDraft(profile?.theme||'essential');setStyleEditor(true);setMessages(prev=>[...prev,{role:'ai',text:'Claro! Experimente um estilo na prévia abaixo. Quando gostar, confirme para aplicar.',stylePicker:true}])}
-   setThinking(false);setBusy(false)
-  },450);return
- }
- setStyleEditor(false);
-if(!onboard&&!preview){if(!connection?.configured){setError('A IA ainda não está conectada. Você pode continuar o onboarding ou experimentar a prévia.');return}}
- followBottom.current=true;const nextMessages=[...(base.length?base:history),{role:'user',text}];setMessages(nextMessages);setBusy(true);setThinking(true);
- if(onboard||preview){timer.current=setTimeout(()=>{
-  if(onboard){
-   const answer=parseAnswer(current,text);
-   if(answer.error)setMessages(prev=>[...prev,{role:'ai',text:answer.error}]);
-   else{
-    const next={...profile,[current.key]:answer.value};setProfile(next);
-    if(step<steps.length-1){
-     setStep(step+1);setMessages(prev=>[...prev,{role:'ai',text:onboardingQuestion(step+1,next)}]);
-    }else{
-     completed(next);setMessages(prev=>[...prev,{role:'ai',text:`Tudo pronto, ${next.name}! Seu TYVON ficou no estilo ${appStyles.find(s=>s.id===next.theme)?.name||'Essencial'}.\n\nMontei uma rotina de ${next.days} dias para ${next.goal.toLowerCase()}. Abra os exercícios no card ou comece seu primeiro treino.\n\n${next.age<18?'Vamos priorizar técnica, recuperação e acompanhamento profissional.':next.experience==='Iniciante'?'Comece com calma: técnica primeiro, carga depois.':'Menos volume, boa execução e recuperação: sua base inspirada no HIT.'}${next.limitations!=='Nenhuma'?' Como você informou uma restrição, valide os exercícios com um profissional.':''}`,workouts:makePlan(next),plan:true}]);
-    }
-   }
-  }else setMessages(prev=>[...prev,{role:'ai',text:coachReply(text,p),preview:true,workouts:selectWorkoutCards(text,p,nextWorkoutId)}]);
-  setThinking(false);setBusy(false)
- },700);return}
+import {apiFetch} from './api.js';
 
- const c=new AbortController();controller.current=c;let reply='',pending='',responseWorkouts=[];let appended=false;try{const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:nextMessages.filter(m=>m.text&&!m.error).slice(-16).map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text})),profile:{age:p.age,name:p.name,goal:p.goal,experience:p.experience,equipment:p.equipment,days:p.days,limitations:p.limitations,experienceVersion:p.experienceVersion||'v1',sessionMinutes:p.sessionMinutes||50,priorityMuscles:p.priorityMuscles||[]},nextWorkoutId}),signal:c.signal});if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'Não foi possível conectar a IA. Tente novamente.')}if(response.headers.get('Content-Type')?.includes('application/json')){const data=await response.json();const cards=sanitizeWorkoutCards(data.workouts);setMessages(prev=>[...prev,{role:'ai',text:readableResponse(data.message),workouts:cards}]);return}if(!response.body)throw new Error('A resposta não chegou. Tente novamente.');const reader=response.body.getReader(),decoder=new TextDecoder();function receive(line){if(!line.startsWith('data:'))return;const raw=line.slice(5).trim();if(!raw||raw==='[DONE]')return;let data;try{data=JSON.parse(raw)}catch{return}if(data.error)throw new Error('A resposta foi interrompida. Tente novamente.');const tyvonPayload=data.tyvon??data.rep;if(tyvonPayload?.type==='workouts'){responseWorkouts=sanitizeWorkoutCards(tyvonPayload.workouts);if(appended)setMessages(prev=>prev.map((m,i)=>i===prev.length-1?{...m,workouts:responseWorkouts}:m));return}const chunk=data.choices?.[0]?.delta?.content;if(typeof chunk!=='string'||!chunk)return;reply+=chunk;setThinking(false);if(!appended){appended=true;setMessages(prev=>[...prev,{role:'ai',text:readableResponse(reply,{fallback:''}),live:true,workouts:responseWorkouts}])}else setMessages(prev=>prev.map((m,i)=>i===prev.length-1?{...m,text:readableResponse(reply,{fallback:''})}:m))}
- for(;;){const {done,value}=await reader.read();if(done){pending+=decoder.decode();break}pending+=decoder.decode(value,{stream:true});const lines=pending.split('\n');pending=lines.pop();for(const line of lines)receive(line.trimEnd())}if(pending)receive(pending.trimEnd());if(appended)setMessages(prev=>prev.map((m,i)=>i===prev.length-1?{...m,text:readableResponse(reply)}:m));if(!reply.trim())throw new Error('A IA não retornou uma resposta. Tente novamente.');
- }catch(e){if(e.name!=='AbortError')setError((reply?'A resposta foi interrompida. ':'')+e.message)}finally{setMessages(prev=>prev.map(m=>m.live?{...m,live:false}:m));setThinking(false);setBusy(false)}
+function plainResponse(text,cards){return readableResponse(text,{fallback:cards?.length?'Seu treino está nos cards abaixo.':''})}
+
+export default function Chat({request,clearRequest,profile,p,setProfile,messages,setMessages,onboard,step,setStep,completed,plan,go,saveStatus,start,nextWorkoutId=0}){
+ const [busy,setBusy]=useState(false),[thinking,setThinking]=useState(false),[connection,setConnection]=useState(null),[preview,setPreview]=useState(false),[error,setError]=useState('');
+ const historyContainer=useRef(null),followBottom=useRef(true),timer=useRef(null),controller=useRef(null);
+ const current=step===3&&profile?.age<18?{...steps[step],chips:['Ganhar massa muscular','Melhorar condicionamento','Criar uma rotina']}:steps[step];
+ const history=messages.length?messages:[{role:'ai',text:`${p.name}, o que você quer melhorar hoje?`,intro:true}];
+
+ useEffect(()=>{const c=new AbortController();fetch('/api/chat/status',{signal:c.signal,cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(setConnection).catch(()=>{if(!c.signal.aborted)setConnection({configured:false})});return()=>{c.abort();clearTimeout(timer.current);controller.current?.abort()}},[]);
+ useLayoutEffect(()=>{const el=historyContainer.current;if(el&&followBottom.current)el.scrollTop=el.scrollHeight},[messages,thinking]);
+ useEffect(()=>{const previous=document.body.style.overflow;document.body.style.overflow='hidden';const viewport=window.visualViewport;let frame;function resize(){cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>{document.documentElement.style.setProperty('--chat-height',(viewport?.height||window.innerHeight)+'px');document.documentElement.style.setProperty('--chat-top',(viewport?.offsetTop||0)+'px')})}resize();viewport?.addEventListener('resize',resize);viewport?.addEventListener('scroll',resize);window.addEventListener('resize',resize);return()=>{document.body.style.overflow=previous;cancelAnimationFrame(frame);viewport?.removeEventListener('resize',resize);viewport?.removeEventListener('scroll',resize);window.removeEventListener('resize',resize);document.documentElement.style.removeProperty('--chat-height');document.documentElement.style.removeProperty('--chat-top')}},[]);
+ useEffect(()=>{if(request&&!onboard&&connection){const text=request.text;clearRequest();send(text)}},[request?.id,connection,onboard]);
+
+ async function send(text,base=messages){
+  if(busy)return;
+  setError('');
+  if(text.length>5000){setError('Use até 5.000 caracteres por mensagem.');return}
+  if(!onboard&&!preview&&!connection?.configured){setError('O TYVON AI está indisponível no momento. Você pode experimentar a prévia.');return}
+  followBottom.current=true;
+  const nextMessages=[...(base.length?base:history),{role:'user',text}];
+  setMessages(nextMessages);setBusy(true);setThinking(true);
+
+  if(onboard||preview){
+   timer.current=setTimeout(()=>{
+    if(onboard){
+     const answer=parseAnswer(current,text);
+     if(answer.error)setMessages(prev=>[...prev,{role:'ai',text:answer.error}]);
+     else{
+      const next={...profile,[current.key]:answer.value};
+      setProfile(next);
+      if(step<steps.length-1){
+       setStep(step+1);setMessages(prev=>[...prev,{role:'ai',text:onboardingQuestion(step+1,next)}]);
+      }else{
+       completed(next);
+       setMessages(prev=>[...prev,{role:'ai',text:`Tudo pronto, ${next.name}! Montei ${next.days} sessões por semana para ${next.goal.toLowerCase()}.
+
+Agora cada dia tem uma ficha completa, com exercícios, séries, repetições e descanso definidos.
+
+${next.age<18?'Vamos priorizar técnica, recuperação e acompanhamento profissional.':next.experience==='Iniciante'?'Comece com calma e registre suas cargas.':'Use o histórico para evoluir sem trocar a ficha toda hora.'}${next.limitations!=='Nenhuma'?' Como você informou uma restrição, valide os exercícios com um profissional.':''}`,workouts:makePlan(next),plan:true}]);
+      }
+     }
+    }else setMessages(prev=>[...prev,{role:'ai',text:coachReply(text,p),preview:true,workouts:selectWorkoutCards(text,p,nextWorkoutId)}]);
+    setThinking(false);setBusy(false);
+   },550);
+   return;
+  }
+
+  const c=new AbortController();controller.current=c;let reply='',pending='',appended=false;
+  try{
+   const response=await apiFetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:nextMessages.filter(m=>m.text&&!m.error&&!m.preview).slice(-16).map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text})),nextWorkoutId}),signal:c.signal});
+   if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'Não foi possível conectar a IA. Tente novamente.')}
+   if(response.headers.get('Content-Type')?.includes('application/json')){
+    const data=await response.json(),cards=sanitizeWorkoutCards(data.workouts);
+    setMessages(prev=>[...prev,{role:'ai',text:readableResponse(data.message),workouts:cards}]);
+    return;
+   }
+   if(!response.body)throw new Error('A resposta não chegou. Tente novamente.');
+   const reader=response.body.getReader(),decoder=new TextDecoder();
+   function receive(line){
+    if(!line.startsWith('data:'))return;
+    const raw=line.slice(5).trim();if(!raw)return;
+    let data;try{data=JSON.parse(raw)}catch{return}
+    if(data.type==='error')throw new Error('A resposta foi interrompida. Tente novamente.');
+    if(data.type==='done')return;
+    if(data.type!=='token'||typeof data.text!=='string')return;
+    reply+=data.text;setThinking(false);
+    if(!appended){appended=true;setMessages(prev=>[...prev,{role:'ai',text:readableResponse(reply,{fallback:''}),live:true}])}
+    else setMessages(prev=>prev.map((m,i)=>i===prev.length-1?{...m,text:readableResponse(reply,{fallback:''})}:m));
+   }
+   for(;;){const {done,value}=await reader.read();if(done){pending+=decoder.decode();break}pending+=decoder.decode(value,{stream:true});const lines=pending.split('\n');pending=lines.pop();for(const line of lines)receive(line.trimEnd())}
+   if(pending)receive(pending.trimEnd());
+   if(appended)setMessages(prev=>prev.map((m,i)=>i===prev.length-1?{...m,text:readableResponse(reply),live:false}:m));
+   if(!reply.trim())throw new Error('A IA não retornou uma resposta. Tente novamente.');
+  }catch(e){if(e.name!=='AbortError')setError((reply?'A resposta foi interrompida. ':'')+e.message)}
+  finally{setMessages(prev=>prev.map(m=>m.live?{...m,live:false}:m));setThinking(false);setBusy(false)}
  }
  function retry(){const idx=messages.findLastIndex(m=>m.role==='user');if(idx>=0)send(messages[idx].text,messages.slice(0,idx))}
-
  const placeholders={name:'Digite seu nome',age:'Quantos anos você tem?',weight:'Digite seu peso em kg',goal:'Qual é o seu objetivo?',experience:'Como está sua experiência?',equipment:'Quais equipamentos você tem?',days:'Quantos dias por semana?',limitations:'Existe alguma restrição?'};
- return <div className={'chat-page reference-chat '+(onboard?'onboarding-chat':'regular-chat')}><div className="chat-stage"><div className="chat-navigation"><button className="chat-back" disabled={busy&&onboard} aria-label={onboard?'Pausar apresentação':'Voltar ao painel'} onClick={()=>go(onboard?'entry':'overview')}><ChevronLeft size={19}/><span>{onboard?'Pausar':'Meu espaço'}</span></button><span className="chat-session-label">{onboard?`Seu perfil · ${step+1} de ${steps.length}`:preview?'Prévia demonstrativa':'TYVON AI'}</span><button disabled={busy&&onboard} className="chat-profile-link" onClick={()=>go(onboard?'entry':'profile')}>{onboard?'Continuar depois':'Perfil'}{!onboard&&<ArrowUpRight size={13}/>}</button></div>{onboard&&<div className="onboarding-progress" role="progressbar" aria-label="Seu perfil" aria-valuenow={step+1} aria-valuemin={0} aria-valuemax={steps.length}><motion.div animate={{width:((step+1)/steps.length*100)+'%'}}/></div>}
- <div ref={historyContainer} onScroll={e=>{const el=e.currentTarget;followBottom.current=el.scrollHeight-el.scrollTop-el.clientHeight<80}} className="reference-history" role="log" aria-live="polite" aria-busy={busy}><div className="companion-intro"><Bot thinking={thinking}/><span>{onboard?'VAMOS CONHECER SEU RITMO':'SEU PRÓXIMO PASSO COMEÇA AQUI'}</span></div>{history.map((m,i)=><motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:.2}} key={i} className={'message '+m.role}><div><div className="bubble">{m.role==='ai'?(onboard?plainResponse(m.text,m.workouts).replace(/\n\s*\n/g,' '):plainResponse(m.text,m.workouts)):m.text}</div>{m.preview&&<small className="preview-label">Resposta de demonstração</small>}{m.role==='ai'&&!m.live&&(m.workouts?.length||m.plan)&&<WorkoutCards workouts={m.workouts?.length?m.workouts:plan} onStart={start} onOpen={()=>go('workouts')}/>}</div></motion.div>)}{(choosingStyle||styleEditor)&&!thinking&&<div className="style-onboarding"><ThemePicker value={themeDraft} onChange={setThemeDraft} disabled={busy}/><p className="style-onboarding-note">Você também pode trocar pelo chat ou no Perfil.</p>{styleEditor&&<div className="chat-style-actions"><button className="style-confirm" disabled={busy} onClick={()=>send('Trocar o tema para '+appStyles.find(s=>s.id===themeDraft).name)}>Aplicar {appStyles.find(s=>s.id===themeDraft).name}</button><button className="chat-style-cancel" disabled={busy} onClick={()=>{setStyleEditor(false);setMessages(prev=>[...prev,{role:'ai',text:'Combinado, mantemos seu estilo atual. Como posso te ajudar agora?'}])}}>Agora não</button></div>}</div>}<AnimatePresence>{thinking&&<motion.div className="reference-thinking" role="status" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><span className="thinking-dots"><i/><i/><i/></span><ShinyText text="Pensando…" speed={2} color="#777777" shineColor="#eeeeee"/></motion.div>}</AnimatePresence></div>
- <div className="reference-compose">{!onboard&&connection&&!connection.configured&&<div className="connection-note"><span>{preview?'Você está explorando respostas de exemplo.':'O TYVON AI está indisponível no momento.'}</span><button onClick={()=>setPreview(!preview)} disabled={busy}>{preview?'Sair da prévia':'Experimentar prévia'}<ArrowUpRight size={12}/></button></div>}{<div className="suggestions">{(onboard?current?.chips:['Qual treino faço hoje?','Como escolher a carga?','Trocar tema'])?.map(c=><button key={c} disabled={busy} onClick={()=>send(c)}>{c}</button>)}</div>}{onboard&&!choosingStyle&&current?.hint&&<p className="input-hint">{current.hint}</p>}{error&&<div className="chat-error" role="alert"><span>{error}</span>{connection?.configured&&<button disabled={busy} onClick={retry}><RotateCcw size={13}/>Tentar de novo</button>}</div>}{choosingStyle?<button className="style-confirm" disabled={busy} onClick={()=>send(appStyles.find(s=>s.id===themeDraft).name)}>{busy?'Pensando…':`Usar ${appStyles.find(s=>s.id===themeDraft).name} e ver meu treino`}</button>:<PromptInput backDisabled={busy&&onboard} onSubmit={send} disabled={busy} onBack={()=>go(onboard?'entry':'overview')} placeholder={onboard?placeholders[current?.key]:`Converse com o TYVON…`} mode={onboard?'Seu perfil':preview?'Prévia':connection?.configured?'Conectado':'Aguardando conexão'}/>}<p className="chat-disclaimer">{onboard?(saveStatus==='saving'?'Salvando seu progresso…':saveStatus==='error'?'Salvamento pendente. Suas respostas continuam aqui.':'Seu progresso está salvo. Continue no seu tempo.'):'A IA pode errar. Valide seu plano com um profissional.'}</p></div></div></div>
+
+ return <div className={'chat-page reference-chat '+(onboard?'onboarding-chat':'regular-chat')}><div className="chat-stage">
+  <div className="chat-navigation"><button className="chat-back" disabled={busy&&onboard} aria-label={onboard?'Pausar apresentação':'Voltar ao painel'} onClick={()=>go(onboard?'entry':'overview')}><ChevronLeft size={19}/><span>{onboard?'Pausar':'Meu espaço'}</span></button><span className="chat-session-label">{onboard?`Seu perfil · ${step+1} de ${steps.length}`:preview?'Prévia demonstrativa':'TYVON AI'}</span><button disabled={busy&&onboard} className="chat-profile-link" onClick={()=>go(onboard?'entry':'profile')}>{onboard?'Continuar depois':'Perfil'}{!onboard&&<ArrowUpRight size={13}/>}</button></div>
+  {onboard&&<div className="onboarding-progress" role="progressbar" aria-label="Seu perfil" aria-valuenow={step+1} aria-valuemin={1} aria-valuemax={steps.length}><motion.div animate={{width:((step+1)/steps.length*100)+'%'}}/></div>}
+  <div ref={historyContainer} onScroll={e=>{const el=e.currentTarget;followBottom.current=el.scrollHeight-el.scrollTop-el.clientHeight<80}} className="reference-history" role="log" aria-live="polite" aria-busy={busy}>
+   <div className="companion-intro"><Bot thinking={thinking}/><span>{onboard?'VAMOS CONHECER SEU RITMO':'SEU PRÓXIMO PASSO COMEÇA AQUI'}</span></div>
+   {history.map((m,i)=><motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:.2}} key={i} className={'message '+m.role}><div><div className="bubble">{m.role==='ai'?(onboard?plainResponse(m.text,m.workouts).replace(/\n\s*\n/g,' '):plainResponse(m.text,m.workouts)):m.text}</div>{m.preview&&<small className="preview-label">Resposta de demonstração</small>}{m.role==='ai'&&!m.live&&(m.workouts?.length||m.plan)&&<WorkoutCards workouts={m.workouts?.length?m.workouts:plan} onStart={start} onOpen={()=>go('workouts')}/>}</div></motion.div>)}
+   <AnimatePresence>{thinking&&<motion.div className="reference-thinking" role="status" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><span className="thinking-dots"><i/><i/><i/></span><ShinyText text="Pensando…" speed={2} color="#777777" shineColor="#eeeeee"/></motion.div>}</AnimatePresence>
+  </div>
+  <div className="reference-compose">
+   {!onboard&&connection&&!connection.configured&&<div className="connection-note"><span>{preview?'Você está explorando respostas de exemplo.':'O TYVON AI está indisponível no momento.'}</span><button onClick={()=>setPreview(!preview)} disabled={busy}>{preview?'Sair da prévia':'Experimentar prévia'}<ArrowUpRight size={12}/></button></div>}
+   <div className="suggestions">{(onboard?current?.chips:['Qual treino faço hoje?','Como escolher a carga?','Como organizar meu descanso?'])?.map(c=><button key={c} disabled={busy} onClick={()=>send(c)}>{c}</button>)}</div>
+   {onboard&&current?.hint&&<p className="input-hint">{current.hint}</p>}
+   {error&&<div className="chat-error" role="alert"><span>{error}</span>{connection?.configured&&<button disabled={busy} onClick={retry}><RotateCcw size={13}/>Tentar de novo</button>}</div>}
+   <PromptInput backDisabled={busy&&onboard} onSubmit={send} disabled={busy} onBack={()=>go(onboard?'entry':'overview')} placeholder={onboard?placeholders[current?.key]:'Converse com o TYVON…'} mode={onboard?'Seu perfil':preview?'Prévia':connection?.configured?'Conectado':'Aguardando conexão'}/>
+   <p className="chat-disclaimer">{onboard?(saveStatus==='saving'?'Salvando seu progresso…':saveStatus==='error'?'Salvamento pendente. Suas respostas continuam aqui.':'Seu progresso está salvo. Continue no seu tempo.'):'A IA pode errar. Valide decisões de treino com um profissional.'}</p>
+  </div>
+ </div></div>;
 }

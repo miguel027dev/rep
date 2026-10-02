@@ -1,8 +1,46 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makePlan,selectWorkoutCards,sanitizeWorkoutCards} from '../shared/workouts.js';
-const profile={name:'Miguel',goal:'Ganhar massa muscular',experience:'Avançado',equipment:['Halteres','Banco','Cabos','Máquinas'],days:4,limitations:'Nenhuma'};
-test('HIT-inspired training separates warm-ups from a single working set and respects equipment',()=>{const plan=makePlan(profile);assert.equal(plan.length,4);assert.equal(plan[0].name,'Ombros e tríceps');assert.ok(plan.every(w=>w.exercises.every(e=>e.sets===1&&e.restSeconds>=90&&e.warmupSets>=1)));assert.ok(plan.every(w=>w.intensity==='1–2 repetições de reserva'));const home=makePlan({...profile,equipment:['Peso corporal']});assert.ok(home.every(w=>w.exercises.every(e=>e.equipment==='Peso corporal')));const dumbbells=makePlan({...profile,equipment:['Halteres']});assert.ok(dumbbells.every(w=>w.exercises.every(e=>['Halteres','Peso corporal'].includes(e.equipment))))});
-test('Beginner intensity and recovery are gradual, and the fifth day is recovery',()=>{const beginner=makePlan({...profile,experience:'Iniciante',days:4});assert.deepEqual(beginner.map(w=>w.name),['Superiores A','Inferiores A','Superiores B','Inferiores B']);assert.ok(beginner.every(w=>w.exercises.every(e=>e.sets===2)));assert.ok(beginner.every(w=>w.intensity==='2–3 repetições de reserva'));const plan=makePlan({...profile,days:5});assert.equal(plan.length,5);assert.equal(plan[4].kind,'recovery');assert.ok(plan[4].exercises.every(e=>e.warmupSets===0));assert.match(makePlan({...profile,limitations:'Dor no ombro'})[0].note,/profissional/)});
-test('Cards follow workout requests and never appear on ordinary load, rest, or pain questions',()=>{for(const text of ['Mostre meus treinos','Pode montar um treino para mim?','Me dá um treino','Quero começar a treinar'])assert.equal(selectWorkoutCards(text,profile).length,4);assert.equal(selectWorkoutCards('Qual treino faço hoje?',profile,2)[0].id,2);assert.equal(selectWorkoutCards('Monte um treino de costas',profile)[0].name,'Costas');assert.equal(selectWorkoutCards('Quero o treino B',profile)[0].id,1);for(const text of ['Como escolher a carga?','Quanto devo descansar?','Senti dor no treino de pernas','Oi, tudo bem?'])assert.deepEqual(selectWorkoutCards(text,profile),[]);assert.deepEqual(selectWorkoutCards('Mostre meu plano',{days:4}),[])});
-test('Stored workout cards are bounded and retain the actual instructions',()=>{const plan=makePlan(profile);assert.deepEqual(sanitizeWorkoutCards(plan),plan);const unsafe=[{...plan[0],exercises:[{...plan[0].exercises[0],sets:999,restSeconds:0,name:'a'.repeat(1000)}]}];const [card]=sanitizeWorkoutCards(unsafe);assert.equal(card.exercises[0].sets,6);assert.equal(card.exercises[0].restSeconds,90);assert.equal(card.exercises[0].name.length,100);assert.deepEqual(sanitizeWorkoutCards([{name:'Invalid'}]),[])});
+
+const profile={name:'Miguel',age:25,goal:'Ganhar massa muscular',experience:'Avançado',equipment:['Halteres','Banco','Cabos','Máquinas'],days:4,limitations:'Nenhuma'};
+
+test('adult V1 creates complete sessions for 2 to 5 training days',()=>{
+ for(const days of [2,3,4,5]){
+  const plan=makePlan({...profile,days});
+  assert.equal(plan.length,days);
+  assert.ok(plan.every(w=>w.kind==='strength'));
+  assert.ok(plan.every(w=>w.exercises.length>=6));
+  assert.ok(plan.every(w=>w.exercises.every(e=>e.sets>=2&&e.sets<=3&&e.warmupSets>=1&&e.restSeconds>=75)));
+ }
+});
+
+test('equipment selection never invents unavailable weighted equipment',()=>{
+ const body=makePlan({...profile,days:3,equipment:['Peso corporal']});
+ assert.ok(body.every(w=>w.exercises.every(e=>e.equipment==='Peso corporal')));
+ const dumbbells=makePlan({...profile,days:3,equipment:['Halteres']});
+ assert.ok(dumbbells.every(w=>w.exercises.every(e=>['Halteres','Peso corporal'].includes(e.equipment))));
+});
+
+test('minor plans stay conservative and capped',()=>{
+ const plan=makePlan({...profile,age:16,days:5});
+ assert.ok(plan.length<=3);
+ assert.ok(plan.every(w=>w.exercises.length===5));
+ assert.ok(plan.every(w=>w.intensity==='3–4 repetições de reserva'));
+ assert.ok(plan.every(w=>w.exercises.every(e=>e.sets===2&&e.targetRir===4)));
+});
+
+test('cards follow workout requests and ignore pain or ordinary questions',()=>{
+ assert.equal(selectWorkoutCards('Mostre meus treinos',profile).length,4);
+ assert.equal(selectWorkoutCards('Qual treino faço hoje?',profile,2)[0].id,2);
+ assert.equal(selectWorkoutCards('Quero o treino B',profile)[0].id,1);
+ for(const text of ['Como escolher a carga?','Quanto devo descansar?','Senti dor no treino de pernas','Oi, tudo bem?'])assert.deepEqual(selectWorkoutCards(text,profile),[]);
+});
+
+test('stored workout cards are bounded',()=>{
+ const plan=makePlan(profile),unsafe=[{...plan[0],exercises:[{...plan[0].exercises[0],sets:999,restSeconds:0,name:'a'.repeat(1000)}]}];
+ const [card]=sanitizeWorkoutCards(unsafe);
+ assert.equal(card.exercises[0].sets,6);
+ assert.equal(card.exercises[0].restSeconds,90);
+ assert.equal(card.exercises[0].name.length,100);
+ assert.deepEqual(sanitizeWorkoutCards([{name:'Invalid'}]),[]);
+});

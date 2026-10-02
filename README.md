@@ -1,33 +1,140 @@
-# TYVON — Flask + PostgreSQL
+# TYVON
 
-Aplicativo TYVON com o frontend React/Vite original preservado e backend migrado para **Flask** com **PostgreSQL**.
+TYVON é um aplicativo de treino com experiência única, frontend React/Vite e backend Flask/PostgreSQL.
 
 ## Arquitetura
 
-- Frontend: React 19 + Vite + Motion + Three.js.
-- Backend: Flask 3, servido por Gunicorn em produção.
-- Banco: PostgreSQL com `psycopg` e estado de conta armazenado em `JSONB`.
-- IA: NVIDIA Cloud API via `/v1/chat/completions`, com streaming SSE até o frontend.
-- Autenticação: e-mail/senha com PBKDF2-SHA256, cookies HttpOnly e suporte opcional a Google OAuth/PKCE.
-- Deploy: Render Web Service + Render PostgreSQL.
+- Frontend: React 19 + Vite + Motion.
+- Backend: Flask 3 + Gunicorn.
+- Banco: PostgreSQL com dados normalizados.
+- IA: gateway server-side para NVIDIA Cloud com protocolo SSE próprio do TYVON.
+- Autenticação: senha Argon2id, Google OAuth/PKCE, sessão HttpOnly, CSRF e recuperação/verificação de e-mail.
+- Produção: Render Web Service + Render PostgreSQL.
+- Android: WebView endurecida apontando para a aplicação web publicada.
 
-O frontend continua chamando os mesmos contratos HTTP (`/api/auth/*`, `/api/account`, `/api/chat`), portanto a migração não exige mudança de layout, CSS ou componentes visuais.
+A aplicação usa uma única experiência TYVON, com identidade preto/grafite/branco e regras de treino centralizadas no motor do produto.
 
-## Estrutura principal
+## Treinos
 
-- `src/` e `public/`: frontend original.
-- `backend/auth.py`: autenticação, sessões e Google OAuth.
-- `backend/account.py`: persistência e validação do perfil/histórico.
-- `backend/chat.py`: proxy seguro para a NVIDIA e streaming SSE.
-- `backend/workouts.py`: regras de treinos/cards usadas pelo backend Flask.
-- `backend/db.py`: conexão e inicialização do PostgreSQL.
-- `migrations/001_init.sql`: esquema SQL documentado.
-- `app.py`: aplicação Flask e entrega do build Vite.
-- `render.yaml`: referência de infraestrutura para Render.
+O motor TYVON é a única fonte de plano ativa.
 
-## Rodar localmente
+Adultos recebem fichas completas conforme a frequência:
 
-Requisitos: Python 3.13+, Node.js 22+ e PostgreSQL.
+- 2 dias: dois treinos de corpo inteiro.
+- 3 dias: três treinos de corpo inteiro.
+- 4 dias: superiores/inferiores A/B.
+- 5 dias: Push/Pull/Pernas/Superiores/Inferiores.
+
+As sessões adultas usam aproximadamente seis exercícios por dia, respeitando os equipamentos disponíveis. Usuários de 14 a 17 anos usam uma programação mais conservadora, limitada a até três sessões de corpo inteiro, foco técnico e maior margem de repetições.
+
+Cada série concluída pode registrar carga, repetições e RIR.
+
+## Persistência
+
+A API continua expondo `/api/account` para manter um contrato simples com o frontend, mas o estado não é mais armazenado como um único JSONB.
+
+Tabelas principais:
+
+- `tyvon_users`
+- `tyvon_sessions`
+- `tyvon_profiles`
+- `tyvon_account_meta`
+- `tyvon_messages`
+- `tyvon_workout_logs`
+- `tyvon_workout_sets`
+- `tyvon_email_tokens`
+- `tyvon_ai_limits`
+- `tyvon_consents`
+- `tyvon_privacy_requests`
+
+O cliente usa uma revisão de estado via `If-Match` para impedir que uma aba ou dispositivo sobrescreva silenciosamente dados mais novos.
+
+Mensagens em streaming não são gravadas token por token. O autosave ignora mensagens ainda marcadas como live e persiste apenas snapshots duráveis.
+
+## Migrações
+
+`backend/migrate.py` executa arquivos SQL versionados de `migrations/` antes do Gunicorn servir tráfego.
+
+O runner usa PostgreSQL advisory lock, então múltiplos workers/processos podem iniciar sem executar DDL concorrente.
+
+O primeiro deploy com a nova arquitetura migra o estado legado de `tyvon_accounts` para as tabelas normalizadas e mantém o registro antigo apenas como fallback histórico durante a transição.
+
+## Segurança
+
+- Argon2id para novas senhas.
+- Hashes PBKDF2 antigos são aceitos no primeiro login válido e convertidos automaticamente para Argon2id.
+- Google e senha com o mesmo e-mail são vinculados à mesma conta.
+- Tokens de sessão aleatórios; somente o SHA-256 do token é persistido.
+- Cookies HttpOnly e Secure em HTTPS.
+- CSRF double-submit em operações autenticadas de escrita.
+- origem canônica e `ProxyFix` configurável por `TRUST_PROXY_HOPS`.
+- CSP, HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy, COOP e CORP.
+- request ID e logging estruturado.
+- falha de PostgreSQL retorna `DATABASE_UNAVAILABLE` em vez de parecer logout.
+- rate limit de login, recuperação de senha e TYVON AI.
+- validação server-side de objetivo, experiência e equipamentos.
+- dados do perfil usados pela IA são carregados do banco, não confiados ao payload do navegador.
+
+## IA
+
+`POST /api/chat`:
+
+1. valida sessão, CSRF e payload;
+2. bloqueia padrões explícitos de prompt injection;
+3. carrega o perfil confiável do banco;
+4. resolve pedidos de ficha pelo motor TYVON antes de chamar o modelo;
+5. aplica rate limit por usuário/IP;
+6. chama o provedor server-side;
+7. converte o stream do provedor para o protocolo TYVON:
+
+```text
+data: {"type":"token","text":"..."}
+data: {"type":"done"}
+```
+
+O navegador não conhece mais o formato `choices[].delta.content` do provedor.
+
+Limites padrão:
+
+- 12 chamadas de IA por minuto.
+- 150 chamadas de IA por dia.
+
+Podem ser alterados por `AI_RATE_LIMIT_MINUTE` e `AI_RATE_LIMIT_DAY`.
+
+## Conta e e-mail
+
+O backend contém:
+
+- verificação de e-mail;
+- reenvio de verificação;
+- solicitação de recuperação;
+- redefinição por token de uso único;
+- invalidação de sessões após redefinir senha.
+
+O envio exige SMTP configurado. Sem SMTP, login e Google continuam funcionando, mas a UI informa que a entrega por e-mail está indisponível.
+
+## LGPD
+
+`POST /api/privacy/requests` cria um protocolo.
+
+`GET /api/privacy/requests/me` mostra solicitações vinculadas ao usuário.
+
+Opcionalmente, `PRIVACY_WEBHOOK_URL` recebe nova solicitação. Um sistema administrativo pode atualizar o status por `PATCH /api/privacy/requests/<protocol>` usando `PRIVACY_ADMIN_TOKEN`.
+
+Status suportados:
+
+- `received`
+- `in_review`
+- `completed`
+- `rejected`
+
+## Desenvolvimento
+
+Requisitos:
+
+- Python 3.13+
+- Node.js 22+
+- PostgreSQL
 
 ```bash
 cp .env.example .env
@@ -39,103 +146,63 @@ npm run build
 python app.py
 ```
 
-Para desenvolver o frontend com hot reload, rode o Flask em `:5000` e, em outro terminal, `npm run dev`. O Vite faz proxy de `/api` para o Flask sem alterar o frontend.
+`npm run build` executa automaticamente testes frontend e backend antes de compilar.
 
-## Variáveis de ambiente
+## Testes
+
+```bash
+npm run test:frontend
+python -m pytest -q
+npm run build
+```
+
+O CI executa esses checks em pull requests e pushes para `main`.
+
+## Variáveis
+
+Obrigatórias em produção:
+
+- `DATABASE_URL`
+- `NVIDIA_API_KEY`
+- `NVIDIA_MODEL`
+- `PUBLIC_ORIGIN`
+- `AUTH_BASE_URL`
+
+Google opcional:
+
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+
+E-mail opcional:
+
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USERNAME`
+- `SMTP_PASSWORD`
+- `EMAIL_FROM`
+
+Privacidade opcional:
+
+- `PRIVACY_WEBHOOK_URL`
+- `PRIVACY_ADMIN_TOKEN`
+
+Operação:
+
+- `TRUST_PROXY_HOPS`
+- `AI_RATE_LIMIT_MINUTE`
+- `AI_RATE_LIMIT_DAY`
 
 Nunca use prefixo `VITE_` para segredos.
 
-- `DATABASE_URL`: URL PostgreSQL.
-- `NVIDIA_API_KEY`: chave server-side da NVIDIA Cloud.
-- `NVIDIA_MODEL`: identificador do modelo configurado no provedor de IA.
-- `GOOGLE_CLIENT_ID`: opcional.
-- `GOOGLE_CLIENT_SECRET`: opcional.
-- `AUTH_BASE_URL`: URL pública do serviço, usada no callback OAuth.
-- `PORT`: porta local; no Render é fornecida pela plataforma.
+## Health checks
 
-O ZIP de origem não continha credenciais reais da NVIDIA nem do Google; somente nomes de variáveis. Elas devem ser configuradas diretamente no Render e nunca commitadas.
+- `/api/health/live`: processo Flask está vivo.
+- `/api/health/ready`: aplicação e PostgreSQL estão prontos.
+- `/api/health`: alias da readiness.
 
-## Banco PostgreSQL
-
-O backend inicializa as tabelas idempotentemente no primeiro request com `DATABASE_URL` disponível. O mesmo esquema está em `migrations/001_init.sql` para auditoria e operação manual.
-
-Tabelas:
-
-- `tyvon_users`
-- `tyvon_sessions`
-- `tyvon_oauth`
-- `tyvon_auth_limits`
-- `tyvon_accounts`
-
-`tyvon_accounts.state` usa `JSONB` para manter compatibilidade com o formato de estado já esperado pelo frontend.
-
-## TYVON V1 e TYVON V2
-
-A experiência original permanece disponível como **TYVON V1**. O usuário pode ativar ou desativar a **TYVON V2** pelo Perfil sem apagar histórico.
-
-A V2 adiciona:
-
-- motor de treino separado em `shared/workouts-v2.js` e `backend/workouts_v2.py`;
-- divisão semanal baseada em frequência, experiência, equipamentos e duração disponível;
-- registro por série de carga, repetições e RIR;
-- progressão explicável usando histórico recente;
-- configuração de duração por sessão e até três grupos musculares prioritários;
-- analytics de séries, repetições e volume registrado;
-- contexto V2 enviado server-side para o chat NVIDIA;
-- TYVON Circle com compartilhamento manual de resumos estruturados;
-- Circle público desativado para menores de 18 anos;
-- progressão automática de carga desativada para menores de 18 anos.
-
-A V1 continua usando o motor anterior e não é sobrescrita pela V2.
-
-## Privacidade e LGPD
-
-- `/privacidade`: Política de Privacidade pública, com categorias de dados, finalidades, bases legais, direitos do titular, fornecedores, retenção, segurança e transferências internacionais.
-- `/termos`: Termos de Uso públicos.
-- `POST /api/privacy/requests`: canal para solicitações de titulares com protocolo e persistência em PostgreSQL.
-- `tyvon_privacy_requests`: tabela de acompanhamento das solicitações LGPD.
-- O cadastro vincula a aceitação aos Termos e à Política de Privacidade.
-- Informações de lesão, dor ou limitação são opcionais e recebem aviso específico de tratamento por poderem envolver dados sensíveis.
-
-## Segurança
-
-- Sessões usam tokens aleatórios; somente SHA-256 do token é salvo no banco.
-- Senhas usam PBKDF2-SHA256 com 100.000 iterações e salt por usuário.
-- Cookies de sessão são `HttpOnly`, `SameSite=Lax` e `Secure` em HTTPS.
-- Limite de tentativas de login é persistido no PostgreSQL.
-- A chave NVIDIA nunca é enviada ao browser.
-- O backend limita tamanho e formato das mensagens antes de chamar o provedor.
-- Erros do provedor não expõem conteúdo privado nem credenciais.
-
-## Build e testes
-
-```bash
-npm ci
-npm run build
-npm run test:frontend
-pytest -q
-```
-
-`npm run test:frontend` valida a lógica que continua no lado do frontend/shared. Os testes Python validam a implementação migrada do backend. A verificação de preservação visual é feita comparando SHA-256 de todos os arquivos em `src/` e `public/` antes e depois da migração.
-
-## Deploy no Render
-
-Build command:
+## Build de produção
 
 ```bash
 pip install -r requirements.txt && npm ci && npm run build
-```
-
-Start command:
-
-```bash
 gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 90 wsgi:app
 ```
-
-Health check: `/api/health`.
-
-O serviço web deve receber `DATABASE_URL` do PostgreSQL do Render e `AUTH_BASE_URL` apontando para a URL pública final.
-
-## Migração realizada
-
-A implementação anterior baseada em Cloudflare Worker/D1 foi substituída na camada de backend. Arquivos ativos de Worker, Drizzle e D1 foram removidos do runtime. O frontend original foi mantido sem alterações em `src/` e `public/`.
