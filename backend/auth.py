@@ -344,7 +344,7 @@ def auth_action(mode):
             user = cur.fetchone()
             if mode == "register":
                 if body.get("accepted") is not True:
-                    return jsonify({"error": "Confirme que você tem pelo menos 13 anos e aceita os Termos e a Política de Privacidade."}), 400
+                    return jsonify({"error": "Confirme que você tem pelo menos 14 anos e aceita os Termos e a Política de Privacidade."}), 400
                 if user and user.get("password_hash"):
                     return jsonify({"error": "Este e-mail já tem uma conta. Entre com sua senha."}), 409
                 password_value = hash_password(password)
