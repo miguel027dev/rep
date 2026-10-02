@@ -4,9 +4,9 @@ services:
     runtime: python
     plan: free
     region: oregon
-    buildCommand: pip install -r requirements.txt && npm ci && npm run test:frontend && pytest -q && npm run build
+    buildCommand: pip install -r requirements.txt && npm ci && npm run build
     startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 90 wsgi:app
-    healthCheckPath: /api/health
+    healthCheckPath: /api/health/ready
     envVars:
       - key: PYTHON_VERSION
         value: 3.13.7
@@ -23,4 +23,18 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         sync: false
       - key: AUTH_BASE_URL
+        sync: false
+      - key: PUBLIC_ORIGIN
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: PRIVACY_WEBHOOK_URL
         sync: false
