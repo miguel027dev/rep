@@ -36,7 +36,7 @@ function Avatar({name='TY'}){return <div className="avatar">{String(name).slice(
 
 function loadLegacy(){
  try{
-  const current=localStorage.getItem('tyvon-validation-v1'),legacy=localStorage.getItem('rep-validation-v1');
+  const current=localStorage.getItem('tyvon-validation')||localStorage.getItem('tyvon-validation-v1'),legacy=localStorage.getItem('rep-validation-v1');
   const parsed=JSON.parse(current||legacy||'null');
   
   return parsed;
@@ -86,7 +86,7 @@ function App(){
   const initial=raw?.profile?raw:{profile:{email:user.email,name:'Você',equipment:[],complete:false},logs:[],step:0,messages:[{role:'ai',text:'Oi! Eu sou o TYVON. Vamos construir seu ponto de partida juntos. Como você quer que eu te chame?'}]};
   let data;try{data=await accountRequest('POST',initial)}catch(e){if(e.status!==409)throw e;data=await accountRequest()}
   hydrate(data.state);
-  try{localStorage.removeItem('tyvon-validation-v1');localStorage.removeItem('rep-validation-v1')}catch{}
+  try{localStorage.removeItem('tyvon-validation');localStorage.removeItem('tyvon-validation-v1');localStorage.removeItem('rep-validation-v1')}catch{}
   setRoute('chat');
  }
  function ask(text){setChatRequest({id:crypto.randomUUID(),text});go('chat')}
@@ -95,7 +95,7 @@ function App(){
   setProfile(completeProfile);setOnboard(false);notify('Seu plano está pronto.');setTimeout(()=>setPlanReveal(completeProfile),450);
  }
  function finish(log){
-  setLogs(prev=>[...prev,{...log,engine:'v1',setLogs:log.setLogs||[],feedback:log.feedback||{},date:new Date().toISOString(),id:crypto.randomUUID()}]);
+  setLogs(prev=>[...prev,{...log,engine:'tyvon',setLogs:log.setLogs||[],feedback:log.feedback||{},date:new Date().toISOString(),id:crypto.randomUUID()}]);
   setActiveWorkout(null);go('analytics');notify('Treino registrado.');
  }
  async function reset(){
@@ -114,14 +114,14 @@ function App(){
   let data=await accountRequest();setUser(data.user);setReady(true);
   if(data.state){hydrate(data.state);setRoute(data.state.profile?.complete?'overview':'chat')}
   else{
-   const initial={profile:{email:data.user.email,name:'Você',equipment:[],complete:false,theme:'essential',experienceVersion:'v1'},logs:[],step:0,messages:[{role:'ai',text:'Oi! Eu sou o TYVON. Vamos conhecer seu ritmo. Como você quer que eu te chame?'}]};
+   const initial={profile:{email:data.user.email,name:'Você',equipment:[],complete:false},logs:[],step:0,messages:[{role:'ai',text:'Oi! Eu sou o TYVON. Vamos conhecer seu ritmo. Como você quer que eu te chame?'}]};
    data=await accountRequest('POST',initial);hydrate(data.state);setRoute('chat');
   }
  }
  if(route==='entry')return <><AnimatePresence>{showSplash&&<Splash ready={!loading} onDone={dismissSplash}/>}</AnimatePresence><Entry blocked={showSplash} Logo={Logo} user={user} profile={profile?{...profile,step}:null} loading={loading} error={loadError} onRetry={loadAccount} onStart={()=>create()} onImport={()=>create(true)} legacy={legacy.current?.profile} onContinue={()=>go(profile?.complete?'overview':'chat')} saveError={storage.error} onSaveRetry={storage.retry} onAuthenticate={authenticate} onSignOut={signOut} onDashboard={()=>go('overview')}/></>;
 
  return <><AnimatePresence>{showSplash&&<Splash ready={!loading} onDone={dismissSplash}/>}</AnimatePresence><div inert={showSplash} className={'app '+(route==='chat'?'chat-active':'')}>
-  <aside className={'sidebar '+(mobile?'open':'')}><div className="brand"><Logo/><span className="brand-sub">BUILT AROUND YOU</span></div><div className="nav-label">SEU ESPAÇO</div><nav>{nav.map(([id,label,Icon])=><button key={id} aria-label={label} aria-current={route===id?'page':undefined} className={'nav-item '+(route===id?'selected':'')} onClick={()=>go(id)}><Icon size={19}/><span>{label}</span>{id==='chat'&&<span className="ai-tag">AI</span>}</button>)}</nav><div className="sidebar-bottom"><button className="sidebar-user" onClick={()=>go('profile')}><Avatar name={p.name}/><span><strong>{p.name}</strong><small>TYVON V1 · Performance</small></span><ChevronDown size={15}/></button></div></aside>
+  <aside className={'sidebar '+(mobile?'open':'')}><div className="brand"><Logo/><span className="brand-sub">BUILT AROUND YOU</span></div><div className="nav-label">SEU ESPAÇO</div><nav>{nav.map(([id,label,Icon])=><button key={id} aria-label={label} aria-current={route===id?'page':undefined} className={'nav-item '+(route===id?'selected':'')} onClick={()=>go(id)}><Icon size={19}/><span>{label}</span>{id==='chat'&&<span className="ai-tag">AI</span>}</button>)}</nav><div className="sidebar-bottom"><button className="sidebar-user" onClick={()=>go('profile')}><Avatar name={p.name}/><span><strong>{p.name}</strong><small>TYVON · Performance</small></span><ChevronDown size={15}/></button></div></aside>
   {mobile&&<button className="mobile-shade" aria-label="Fechar menu" onClick={()=>setMobile(false)}/>}
   <div className="workspace"><header className="topbar"><div className="breadcrumb"><div className="mobile-brand"><Logo/></div><button className="mobile-menu" aria-label="Abrir menu" onClick={()=>setMobile(true)}><Menu size={22}/></button><span>Meu espaço</span><ChevronRight size={13}/><strong>{nav.find(n=>n[0]===route)?.[1]}</strong></div><div className="top-actions"><span className="demo-badge"><span/>{storage.status==='saving'?'Salvando…':storage.status==='error'?'Salvamento pendente':'Salvo na sua conta'}</span><button className="header-avatar" aria-label="Abrir perfil" onClick={()=>go('profile')}><Avatar name={p.name}/></button></div></header>
    <main><AnimatePresence mode="wait"><motion.div key={route} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}} transition={{duration:.18}}>
@@ -131,7 +131,7 @@ function App(){
     {route==='analytics'&&<AnalyticsPage logs={logs} go={go}/>}
     {route==='profile'&&<ProfilePage p={p} user={user} logs={logs} setProfile={setProfile} notify={notify} reset={reset} signOut={signOut}/>}
    </motion.div></AnimatePresence></main>
-   <footer><Logo small/><span>TYVON · PERFORMANCE</span><span className="footer-right">V1 ÚNICA · PRIVACIDADE POR PADRÃO</span></footer>
+   <footer><Logo small/><span>TYVON · PERFORMANCE</span><span className="footer-right">TYVON · PRIVACIDADE POR PADRÃO</span></footer>
   </div>
   <AppDock items={nav} selected={route} onChange={go}/>
   <AnimatePresence>{activeWorkout&&<WorkoutSession workout={activeWorkout} finish={finish} close={()=>setActiveWorkout(null)} restricted={p.limitations&&p.limitations!=='Nenhuma'}/>}</AnimatePresence>
