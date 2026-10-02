@@ -23,5 +23,6 @@ jobs:
           python-version: '3.13'
           cache: pip
       - run: pip install -r requirements.txt
+      - run: python -m compileall -q app.py wsgi.py backend
       - run: npm ci
       - run: npm run build
