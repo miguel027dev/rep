@@ -38,7 +38,7 @@ function loadLegacy(){
  try{
   const current=localStorage.getItem('tyvon-validation-v1'),legacy=localStorage.getItem('rep-validation-v1');
   const parsed=JSON.parse(current||legacy||'null');
-  if(parsed?.profile)parsed.profile={...parsed.profile,theme:'essential',experienceVersion:'v1'};
+  
   return parsed;
  }catch{return null}
 }
@@ -56,13 +56,13 @@ function App(){
  const [user,setUser]=useState(null),[route,setRoute]=useState('entry'),[mobile,setMobile]=useState(false),[toast,setToast]=useState('');
  const [activeWorkout,setActiveWorkout]=useState(null),[planReveal,setPlanReveal]=useState(null),[onboard,setOnboard]=useState(false),[chatRequest,setChatRequest]=useState(null);
  const [loading,setLoading]=useState(true),[loadError,setLoadError]=useState(''),[ready,setReady]=useState(false),[showSplash,setShowSplash]=useState(true);
- const p=profile?{...sampleProfile,...profile,theme:'essential',experienceVersion:'v1'}:sampleProfile;
+ const p=profile?{...sampleProfile,...profile}:sampleProfile;
  const plan=makePlan(p),lastIndex=logs.length?plan.findIndex(w=>w.name===logs.at(-1)?.name):-1,nextWorkoutId=plan.length?(lastIndex>=0?(lastIndex+1)%plan.length:0):0;
  const storage=useAccountStore({profile,logs,messages,step},ready&&!!user);
  const dismissSplash=useCallback(()=>setShowSplash(false),[]);
 
  function hydrate(state){
-  const nextProfile=state?.profile?{...state.profile,theme:'essential',experienceVersion:'v1'}:null;
+  const nextProfile=state?.profile?{...state.profile}:null;
   setProfile(nextProfile);setLogs(state?.logs||[]);setMessages(state?.messages||[]);setStep(state?.step||0);setOnboard(!!nextProfile&&!nextProfile.complete);
  }
  async function loadAccount(){
@@ -83,7 +83,7 @@ function App(){
  async function create(imported=false){
   if(profile){go('chat');return}
   const raw=imported?legacy.current:null;
-  const initial=raw?.profile?{...raw,profile:{...raw.profile,theme:'essential',experienceVersion:'v1'}}:{profile:{email:user.email,name:'Você',equipment:[],complete:false,theme:'essential',experienceVersion:'v1'},logs:[],step:0,messages:[{role:'ai',text:'Oi! Eu sou o TYVON. Vamos construir seu ponto de partida juntos. Como você quer que eu te chame?'}]};
+  const initial=raw?.profile?raw:{profile:{email:user.email,name:'Você',equipment:[],complete:false},logs:[],step:0,messages:[{role:'ai',text:'Oi! Eu sou o TYVON. Vamos construir seu ponto de partida juntos. Como você quer que eu te chame?'}]};
   let data;try{data=await accountRequest('POST',initial)}catch(e){if(e.status!==409)throw e;data=await accountRequest()}
   hydrate(data.state);
   try{localStorage.removeItem('tyvon-validation-v1');localStorage.removeItem('rep-validation-v1')}catch{}
@@ -91,7 +91,7 @@ function App(){
  }
  function ask(text){setChatRequest({id:crypto.randomUUID(),text});go('chat')}
  function completed(next){
-  const completeProfile={...next,complete:true,theme:'essential',experienceVersion:'v1'};
+  const completeProfile={...next,complete:true};
   setProfile(completeProfile);setOnboard(false);notify('Seu plano está pronto.');setTimeout(()=>setPlanReveal(completeProfile),450);
  }
  function finish(log){
