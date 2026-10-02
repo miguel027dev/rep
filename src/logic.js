@@ -1,4 +1,4 @@
-export const sampleProfile={name:'Alex',age:26,weight:78,goal:'Ganhar massa muscular',experience:'Intermediário',equipment:['Halteres','Barras','Máquinas','Cabos'],days:4,limitations:'Nenhuma',complete:true,theme:'essential',experienceVersion:'v1'};
+export const sampleProfile={name:'Alex',age:26,weight:78,goal:'Ganhar massa muscular',experience:'Intermediário',equipment:['Halteres','Barras','Máquinas','Cabos'],days:4,limitations:'Nenhuma',complete:true};
 export const steps=[
  {key:'name',question:'Primeiro, como você quer que eu te chame?',hint:'Seu primeiro nome já é suficiente.'},
  {key:'age',question:'Qual é a sua idade?',hint:'A partir de 13 anos. Até os 17, treine com acompanhamento de um responsável e profissional.'},
