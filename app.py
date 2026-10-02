@@ -100,7 +100,12 @@ def health_ready():
     return jsonify({"ok": bool(database), "service": "tyvon", "database": bool(database)})
 
 
-@app.get("/signin-with-chatgpt")\ndef legacy_signin_redirect():\n    return redirect("/", code=308)\n\n\n@app.route("/", defaults={"path": ""})
+@app.get("/signin-with-chatgpt")
+def legacy_signin_redirect():
+    return redirect("/", code=308)
+
+
+@app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def static_app(path):
     if path.startswith("api/"):
