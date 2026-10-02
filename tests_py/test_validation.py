@@ -17,14 +17,20 @@ def test_prompt_injection_patterns_are_blocked_without_blocking_normal_training(
     assert not looks_like_prompt_injection("como melhorar minha técnica no supino?")
 
 
-def test_account_rewrites_minor_weight_loss_goal_and_forces_v1():
+def test_account_rewrites_minor_weight_loss_goal():
     state = validate_account_state({
         "profile":{"name":"Miguel","complete":True,"equipment":["Halteres"],"age":14,"weight":60,"goal":"Perder gordura","experience":"Iniciante","limitations":"Nenhuma","days":3},
         "messages":[],"logs":[],"step":7
     }, "test@example.com")
     assert state["profile"]["goal"] == "Criar uma rotina"
-    assert state["profile"]["theme"] == "essential"
-    assert state["profile"]["experienceVersion"] == "v1"
+
+
+def test_profile_rejects_users_below_minimum_age():
+    with pytest.raises(ValueError):
+        validate_account_state({
+            "profile":{"name":"Teste","complete":False,"equipment":[],"age":13,"weight":None,"goal":"","experience":"","limitations":"Nenhuma","days":None},
+            "messages":[],"logs":[],"step":0
+        }, "test@example.com")
 
 
 def test_argon2_password_round_trip():
