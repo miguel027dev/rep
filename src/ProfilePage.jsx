@@ -67,13 +67,13 @@ export default function ProfilePage({p,user,logs,setProfile,notify,reset,signOut
   if(next.age<18&&next.goal==='Perder gordura')next.goal='Criar uma rotina';
   setProfile(next);notify('Perfil atualizado. Seu plano foi recalculado.');
  }
- async function resend(){setVerifyState('sending');try{const r=await apiFetch('/api/auth/resend-verification',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:user.email})});if(!r.ok)throw Error();setVerifyState('sent')}catch{setVerifyState('error')}}
+ async function resend(){setVerifyState('sending');try{const r=await apiFetch('/api/auth/resend-verification',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:user.email})});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'Falha');setVerifyState(d.sent?'sent':'unavailable')}catch{setVerifyState('error')}}
  async function remove(){setDeleting(true);try{await reset()}finally{setDeleting(false)}}
 
  return <div className="profile-v1">
   <section className="profile-viral-hero"><div><span>MEU TYVON</span><h1>{p.name.split(' ')[0]}, seu treino agora tem <em>identidade.</em></h1><p>{p.goal} · {p.days} dias por semana · {p.experience}</p></div><div className="profile-hero-mark">T</div></section>
 
-  {user?.emailVerified===false&&<section className="profile-verification"><LockKeyhole size={20}/><div><strong>Confirme seu e-mail</strong><p>A verificação protege recuperação de senha e propriedade da conta.</p></div><button disabled={verifyState==='sending'||verifyState==='sent'} onClick={resend}>{verifyState==='sent'?'Link enviado':verifyState==='sending'?'Enviando…':'Enviar verificação'}</button></section>}
+  {user?.emailVerified===false&&<section className="profile-verification"><LockKeyhole size={20}/><div><strong>Confirme seu e-mail</strong><p>A verificação protege recuperação de senha e propriedade da conta.</p></div><button disabled={verifyState==='sending'||verifyState==='sent'} onClick={resend}>{verifyState==='sent'?'Link enviado':verifyState==='sending'?'Enviando…':verifyState==='unavailable'?'E-mail indisponível':'Enviar verificação'}</button></section>}
 
   <section className="profile-share-section"><div className="profile-section-title"><div><span>CARDS COMPARTILHÁVEIS</span><h2>Seu treino vira conteúdo.</h2><p>Cards focados em constância e treino — sem peso corporal, foto ou comparação física.</p></div><Sparkles size={22}/></div><div className="profile-share-grid">{cards.map(card=><article className={'profile-share-card share-'+card.id} key={card.id}><span>TYVON / {card.title.toUpperCase()}</span><strong>{card.value}</strong><p>{card.subtitle}</p><div><small>{p.name.split(' ')[0]}</small><button disabled={!!sharing} onClick={()=>share(card)}>{sharing===card.id?<Download size={17}/>:<Share2 size={17}/>} {sharing===card.id?'Gerando…':'Compartilhar'}</button></div></article>)}</div></section>
 
