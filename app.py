@@ -2,7 +2,7 @@ import os
 import secrets
 
 import psycopg
-from flask import Flask, g, jsonify, request, send_from_directory
+from flask import Flask, g, jsonify, redirect, request, send_from_directory
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from backend.account import account_bp
@@ -100,7 +100,7 @@ def health_ready():
     return jsonify({"ok": bool(database), "service": "tyvon", "database": bool(database)})
 
 
-@app.route("/", defaults={"path": ""})
+@app.get("/signin-with-chatgpt")\ndef legacy_signin_redirect():\n    return redirect("/", code=308)\n\n\n@app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def static_app(path):
     if path.startswith("api/"):
