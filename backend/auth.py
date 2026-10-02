@@ -82,6 +82,23 @@ def new_session(user_id):
     return token
 
 
+def action_rate_limit(conn, purpose, identity, limit=3, window_ms=3600000):
+    key = digest("action|" + purpose + "|" + identity + "|" + (request.remote_addr or "unknown"))
+    now = now_ms()
+    with conn.cursor() as cur:
+        cur.execute("SELECT attempts,expires_at FROM tyvon_auth_limits WHERE id=%s", (key,))
+        row = cur.fetchone()
+        if row and row["expires_at"] > now and row["attempts"] >= limit:
+            return False
+        cur.execute("""
+          INSERT INTO tyvon_auth_limits(id,attempts,expires_at) VALUES(%s,1,%s)
+          ON CONFLICT(id) DO UPDATE SET
+            attempts=CASE WHEN tyvon_auth_limits.expires_at<=%s THEN 1 ELSE tyvon_auth_limits.attempts+1 END,
+            expires_at=CASE WHEN tyvon_auth_limits.expires_at<=%s THEN EXCLUDED.expires_at ELSE tyvon_auth_limits.expires_at END
+        """, (key, now + window_ms, now, now))
+    return True
+
+
 def google_configured():
     return bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"))
 
@@ -243,12 +260,15 @@ def resend_verification():
     body = request.get_json(silent=True) or {}
     email = str(body.get("email") or "").strip().lower()
     if EMAIL_RE.match(email):
-        with get_db() as conn, conn.cursor() as cur:
-            cur.execute("SELECT id,email_verified FROM tyvon_users WHERE email=%s AND password_hash IS NOT NULL LIMIT 1", (email,))
-            user = cur.fetchone()
-        if user and not user["email_verified"]:
-            send_verification(user["id"], email)
-    return jsonify({"ok": True, "message": "Se houver uma conta pendente, enviaremos um novo link."})
+        with get_db() as conn:
+            if not action_rate_limit(conn, "verify_email", email):
+                return jsonify({"error": "Muitas solicitações. Tente novamente mais tarde.", "code": "RATE_LIMIT"}), 429
+            with conn.cursor() as cur:
+                cur.execute("SELECT id,email_verified FROM tyvon_users WHERE email=%s AND password_hash IS NOT NULL LIMIT 1", (email,))
+                user = cur.fetchone()
+        sent = bool(user and not user["email_verified"] and send_verification(user["id"], email))
+        return jsonify({"ok": True, "sent": sent, "message": "Se houver uma conta pendente e o envio estiver disponível, enviaremos um novo link."})
+    return jsonify({"ok": True, "sent": False, "message": "Se houver uma conta pendente e o envio estiver disponível, enviaremos um novo link."})
 
 
 @auth_bp.post("/forgot-password")
@@ -258,12 +278,15 @@ def forgot_password():
     body = request.get_json(silent=True) or {}
     email = str(body.get("email") or "").strip().lower()
     if EMAIL_RE.match(email):
-        with get_db() as conn, conn.cursor() as cur:
-            cur.execute("SELECT id FROM tyvon_users WHERE email=%s AND password_hash IS NOT NULL LIMIT 1", (email,))
-            user = cur.fetchone()
+        with get_db() as conn:
+            if not action_rate_limit(conn, "reset_password", email):
+                return jsonify({"error": "Muitas solicitações. Tente novamente mais tarde.", "code": "RATE_LIMIT"}), 429
+            with conn.cursor() as cur:
+                cur.execute("SELECT id FROM tyvon_users WHERE email=%s AND password_hash IS NOT NULL LIMIT 1", (email,))
+                user = cur.fetchone()
         if user:
             send_password_reset(user["id"], email)
-    return jsonify({"ok": True, "message": "Se esse e-mail estiver cadastrado, enviaremos as instruções."})
+    return jsonify({"ok": True, "message": "Se esse e-mail estiver cadastrado e o envio estiver disponível, enviaremos as instruções."})
 
 
 @auth_bp.post("/reset-password")
@@ -272,9 +295,11 @@ def reset_password():
         return jsonify({"error": "Origem não permitida."}), 403
     body = request.get_json(silent=True) or {}
     password = body.get("password")
+    if not isinstance(password, str) or not 10 <= len(password) <= 128:
+        return jsonify({"error": "Use uma senha de 10 a 128 caracteres."}), 400
     user_id = consume_token(str(body.get("token") or ""), "reset_password")
-    if not user_id or not isinstance(password, str) or not 10 <= len(password) <= 128:
-        return jsonify({"error": "Este link expirou ou a senha é inválida."}), 400
+    if not user_id:
+        return jsonify({"error": "Este link expirou ou já foi usado."}), 400
     with get_db() as conn, conn.cursor() as cur:
         cur.execute(
             "UPDATE tyvon_users SET password_hash=%s,password_algo='argon2id',salt=NULL,updated_at=NOW() WHERE id=%s",
