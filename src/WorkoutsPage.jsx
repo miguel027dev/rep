@@ -4,7 +4,7 @@ import {Clock,Dumbbell,Play,ShieldCheck,ChevronDown} from 'lucide-react';
 export default function WorkoutsPage({p,plan,start}){
  const [selected,setSelected]=useState(0),w=plan[Math.min(selected,plan.length-1)];
  return <div className="v1-page">
-  <header className="v1-page-head"><div><span>SEU PLANO TYVON</span><h1>{plan.length} dias. <em>Fichas completas.</em></h1><p>Sem modo adaptativo escondido e sem trocar sua rotina aleatoriamente. Cada sessão mostra a ficha inteira.</p></div><Dumbbell size={30}/></header>
+  <header className="v1-page-head"><div><span>SEU PLANO TYVON</span><h1>{plan.length} dias. <em>Fichas completas.</em></h1><p>Seu plano fica claro e previsível: cada sessão mostra exercícios, séries, repetições e descanso antes de você começar.</p></div><Dumbbell size={30}/></header>
   <div className="v1-workout-layout">
    <aside className="v1-workout-tabs">{plan.map((item,i)=><button key={item.id} className={selected===i?'active':''} onClick={()=>setSelected(i)}><b>{String.fromCharCode(65+i)}</b><span><strong>{item.name}</strong><small>{item.exercises.length} exercícios · {item.minutes} min</small></span></button>)}</aside>
    <section className="v1-plan-card">
