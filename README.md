@@ -12,11 +12,11 @@ TYVON é um aplicativo de treino com experiência única, frontend React/Vite e 
 - Produção: Render Web Service + Render PostgreSQL.
 - Android: WebView endurecida apontando para a aplicação web publicada.
 
-Não existe mais seletor de V1/V2 nem modo de cor alternativo. A aplicação usa uma única experiência TYVON, preto/grafite/branco.
+A aplicação usa uma única experiência TYVON, com identidade preto/grafite/branco e regras de treino centralizadas no motor do produto.
 
 ## Treinos
 
-O motor V1 é a única fonte de plano ativa.
+O motor TYVON é a única fonte de plano ativa.
 
 Adultos recebem fichas completas conforme a frequência:
 
@@ -25,7 +25,7 @@ Adultos recebem fichas completas conforme a frequência:
 - 4 dias: superiores/inferiores A/B.
 - 5 dias: Push/Pull/Pernas/Superiores/Inferiores.
 
-As sessões adultas usam aproximadamente seis exercícios por dia, respeitando os equipamentos disponíveis. Usuários de 13 a 17 anos usam uma programação mais conservadora, limitada a até três sessões de corpo inteiro, foco técnico e maior margem de repetições.
+As sessões adultas usam aproximadamente seis exercícios por dia, respeitando os equipamentos disponíveis. Usuários de 14 a 17 anos usam uma programação mais conservadora, limitada a até três sessões de corpo inteiro, foco técnico e maior margem de repetições.
 
 Cada série concluída pode registrar carga, repetições e RIR.
 
