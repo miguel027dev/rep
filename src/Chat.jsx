@@ -38,7 +38,7 @@ export default function Chat({request,clearRequest,profile,p,setProfile,messages
      const answer=parseAnswer(current,text);
      if(answer.error)setMessages(prev=>[...prev,{role:'ai',text:answer.error}]);
      else{
-      const next={...profile,[current.key]:answer.value,theme:'essential',experienceVersion:'v1'};
+      const next={...profile,[current.key]:answer.value};
       setProfile(next);
       if(step<steps.length-1){
        setStep(step+1);setMessages(prev=>[...prev,{role:'ai',text:onboardingQuestion(step+1,next)}]);
