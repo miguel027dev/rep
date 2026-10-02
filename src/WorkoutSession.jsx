@@ -1,17 +1,46 @@
-import React,{useEffect,useMemo,useState} from 'react';
+import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {AnimatePresence,motion,useReducedMotion} from 'motion/react';
 import {Check,ChevronLeft,ChevronRight,Clock,Pause,Play,X,Zap} from 'lucide-react';
 import Logo from './brand/Logo';
 
-export default function WorkoutSession({workout:w,finish,close,restricted}){
- const [index,setIndex]=useState(0),[checked,setChecked]=useState({}),[weights,setWeights]=useState({}),[reps,setReps]=useState({}),[rirs,setRirs]=useState({}),[seconds,setSeconds]=useState(0),[running,setRunning]=useState(true),[rest,setRest]=useState(0),[confirmClose,setConfirmClose]=useState(false),[summary,setSummary]=useState(false),reduced=useReducedMotion();
+function targetRepValue(target){
+ const match=String(target??'').match(/\d+/);
+ return match?Number(match[0]):1;
+}
+
+function previousSetDefaults(logs,workout){
+ const weights={},reps={},rirs={};
+ workout.exercises.forEach((exercise,exerciseIndex)=>{
+  let previous=[];
+  for(let i=logs.length-1;i>=0&&!previous.length;i--){
+   previous=(logs[i]?.setLogs||[]).filter(set=>set.completed&&(set.exerciseId===exercise.id||set.exerciseName===exercise.name)).sort((a,b)=>Number(a.setIndex)-Number(b.setIndex));
+  }
+  for(let setIndex=0;setIndex<exercise.sets;setIndex++){
+   const item=previous[setIndex]||previous.at(-1);
+   if(!item)continue;
+   const key=exerciseIndex+'-'+setIndex;
+   if(Number(item.weight)>0)weights[key]=String(Number(item.weight));
+   if(Number(item.reps)>0)reps[key]=String(Number(item.reps));
+   if(Number.isFinite(Number(item.rir)))rirs[key]=String(Number(item.rir));
+  }
+ });
+ return {weights,reps,rirs};
+}
+
+export default function WorkoutSession({workout:w,logs=[],finish,close,restricted}){
+ const defaults=useMemo(()=>previousSetDefaults(logs,w),[logs,w]);
+ const [index,setIndex]=useState(0),[checked,setChecked]=useState({}),[weights,setWeights]=useState(()=>defaults.weights),[reps,setReps]=useState(()=>defaults.reps),[rirs,setRirs]=useState(()=>defaults.rirs),[seconds,setSeconds]=useState(0),[running,setRunning]=useState(true),[restEndsAt,setRestEndsAt]=useState(0),[now,setNow]=useState(()=>Date.now()),[effort,setEffort]=useState(null),[confirmClose,setConfirmClose]=useState(false),[summary,setSummary]=useState(false),reduced=useReducedMotion();
+ const startedAt=useRef(Date.now()),pausedTotal=useRef(0),pauseStarted=useRef(null);
+ const rest=Math.max(0,Math.ceil((restEndsAt-now)/1000));
  const e=w.exercises[index],total=useMemo(()=>w.exercises.reduce((a,x)=>a+x.sets,0),[w]),done=Object.values(checked).filter(Boolean).length,exerciseDone=Array.from({length:e.sets},(_,i)=>checked[index+'-'+i]).filter(Boolean).length,percent=Math.round(done/total*100);
- useEffect(()=>{if(!running)return;const id=setInterval(()=>{setSeconds(v=>v+1);setRest(v=>Math.max(0,v-1))},1000);return()=>clearInterval(id)},[running]);
+ useEffect(()=>{const tick=()=>{const current=Date.now();setNow(current);const paused=pausedTotal.current+(pauseStarted.current?current-pauseStarted.current:0);setSeconds(Math.max(0,Math.floor((current-startedAt.current-paused)/1000)))};tick();const id=setInterval(tick,500);return()=>clearInterval(id)},[]);
  useEffect(()=>{const previous=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.body.style.overflow=previous}},[]);
  const format=t=>`${Math.floor(t/60).toString().padStart(2,'0')}:${(t%60).toString().padStart(2,'0')}`;
 
- function toggle(i){const key=index+'-'+i,next=!checked[key];setChecked(v=>({...v,[key]:next}));if(next){setRest(e.restSeconds||90);if(navigator.vibrate)navigator.vibrate(25)}}
- function change(next){setIndex(next);setRest(0);window.scrollTo(0,0)}
+ function toggleRunning(){const current=Date.now();if(running){pauseStarted.current=current;setRunning(false)}else{if(pauseStarted.current)pausedTotal.current+=current-pauseStarted.current;pauseStarted.current=null;setRunning(true)}}
+ function finishSession(){if(running)toggleRunning();setSummary(true)}
+ function toggle(i){const key=index+'-'+i,next=!checked[key];if(next&&!String(reps[key]??'').trim())setReps(v=>({...v,[key]:String(targetRepValue(e.reps))}));setChecked(v=>({...v,[key]:next}));if(next){setRestEndsAt(Date.now()+(e.restSeconds||90)*1000);if(navigator.vibrate)navigator.vibrate(25)}}
+ function change(next){setIndex(next);setRestEndsAt(0);window.scrollTo(0,0)}
  function buildLog(){
   const setLogs=[];
   w.exercises.forEach((exercise,exerciseIndex)=>{
@@ -24,25 +53,25 @@ export default function WorkoutSession({workout:w,finish,close,restricted}){
      group:exercise.group||'',
      setIndex:setIndex+1,
      weight:Number(weights[key]||0),
-     reps:Number(reps[key]||0),
+     reps:Number(reps[key]||targetRepValue(exercise.reps)),
      rir:Number(rirs[key]??exercise.targetRir??2),
      targetRir:Number(exercise.targetRir??2),
      completed:true
     });
    });
   });
-  return {name:w.name,minutes:Math.max(1,Math.round(seconds/60)),sets:setLogs.length,weights,setLogs,feedback:{}};
+  return {name:w.name,minutes:Math.max(1,Math.round(seconds/60)),sets:setLogs.length,weights,setLogs,feedback:effort?{effort}:{}};
  }
  return <motion.div className="workout-session" role="dialog" aria-modal="true" aria-label={`Treino ${w.name} em andamento`} initial={{opacity:0,y:'100%'}} animate={{opacity:1,y:0}} exit={{opacity:0,y:'100%'}} transition={{duration:reduced?0:.45,ease:[.22,1,.36,1]}}>
   <header className="session-appbar"><button aria-label="Encerrar treino" onClick={()=>setConfirmClose(true)}><X size={23}/></button><Logo/><div className="session-live"><i/>AO VIVO</div></header>
-  {confirmClose?<div className="session-confirm"><div><span className="session-kicker">TREINO PAUSADO</span><h2>Quer parar por aqui?</h2><p>Você concluiu {done} de {total} séries. Pode continuar ou salvar o que já fez.</p><div className="session-confirm-actions"><button className="session-main-action" onClick={()=>setConfirmClose(false)}>Continuar treino</button>{done>0&&<button onClick={()=>finish(buildLog())}>Salvar treino parcial</button>}<button onClick={close}>Sair sem salvar</button></div></div></div>:summary?<motion.div className="session-finish" initial={{opacity:0,scale:.94}} animate={{opacity:1,scale:1}}><div className="finish-burst" aria-hidden="true"><i/><i/><i/><i/><i/></div><span className="finish-icon"><Check size={34}/></span><span className="session-kicker">TREINO CONCLUÍDO</span><h2>Você apareceu.<br/><span>Isso conta.</span></h2><p>{done} séries em {format(seconds)}. Carga, repetições e RIR das séries concluídas ficam no seu histórico.</p><div className="finish-stats"><span><strong>{done}</strong>séries</span><span><strong>{format(seconds)}</strong>tempo</span><span><strong>{w.exercises.length}</strong>exercícios</span></div><button className="session-main-action" onClick={()=>finish(buildLog())}>Salvar e ver minha evolução</button></motion.div>:<>
-   <div className="session-progress-head"><div><span className="session-kicker">{String(index+1).padStart(2,'0')} DE {String(w.exercises.length).padStart(2,'0')}</span><strong>{percent}% concluído</strong></div><div className="session-timer"><Clock size={17}/><strong>{format(seconds)}</strong><button aria-label={running?'Pausar cronômetro':'Retomar cronômetro'} onClick={()=>setRunning(!running)}>{running?<Pause size={16}/>:<Play size={16}/>}</button></div></div>
+  {confirmClose?<div className="session-confirm"><div><span className="session-kicker">TREINO PAUSADO</span><h2>Quer parar por aqui?</h2><p>Você concluiu {done} de {total} séries. Pode continuar ou salvar o que já fez.</p><div className="session-confirm-actions"><button className="session-main-action" onClick={()=>setConfirmClose(false)}>Continuar treino</button>{done>0&&<button onClick={()=>finish(buildLog())}>Salvar treino parcial</button>}<button onClick={close}>Sair sem salvar</button></div></div></div>:summary?<motion.div className="session-finish" initial={{opacity:0,scale:.94}} animate={{opacity:1,scale:1}}><div className="finish-burst" aria-hidden="true"><i/><i/><i/><i/><i/></div><span className="finish-icon"><Check size={34}/></span><span className="session-kicker">TREINO CONCLUÍDO</span><h2>Você apareceu.<br/><span>Isso conta.</span></h2><p>{done} séries em {format(seconds)}. Carga, repetições e RIR das séries concluídas ficam no seu histórico.</p><div className="finish-stats"><span><strong>{done}</strong>séries</span><span><strong>{format(seconds)}</strong>tempo</span><span><strong>{w.exercises.length}</strong>exercícios</span></div><div className="session-feedback"><span>Como foi hoje?</span><div><button className={effort===2?'active':''} onClick={()=>setEffort(2)}>Leve</button><button className={effort===3?'active':''} onClick={()=>setEffort(3)}>Na medida</button><button className={effort===5?'active':''} onClick={()=>setEffort(5)}>Pesado demais</button></div></div><button className="session-main-action" onClick={()=>finish(buildLog())}>Salvar e ver minha evolução</button></motion.div>:<>
+   <div className="session-progress-head"><div><span className="session-kicker">{String(index+1).padStart(2,'0')} DE {String(w.exercises.length).padStart(2,'0')}</span><strong>{percent}% concluído</strong></div><div className="session-timer"><Clock size={17}/><strong>{format(seconds)}</strong><button aria-label={running?'Pausar cronômetro':'Retomar cronômetro'} onClick={toggleRunning}>{running?<Pause size={16}/>:<Play size={16}/>}</button></div></div>
    <div className="session-progress-line"><motion.i animate={{width:percent+'%'}} transition={{duration:.35,ease:[.22,1,.36,1]}}/></div>
    <main className="session-body"><AnimatePresence mode="wait"><motion.section className="session-focus" key={index} initial={{opacity:0,x:24}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-24}} transition={{duration:reduced?0:.25}}><div className="session-muscle"><span>{e.group}</span><small>{e.equipment}</small></div><h1>{e.name}</h1><p>{e.tip}</p>{restricted&&<div className="session-warning">Você informou uma restrição. Valide este exercício com um profissional.</div>}<div className="session-prescription"><span><strong>{e.sets}</strong>séries</span><span><strong>{e.reps}</strong>alvo</span><span><strong>{e.restSeconds}s</strong>descanso</span></div></motion.section></AnimatePresence>
     <section className="session-sets"><div className="session-sets-title"><div><span className="session-kicker">SÉRIES PRINCIPAIS</span><h2>{exerciseDone}/{e.sets} concluídas</h2></div>{e.warmupSets>0&&<span className="warmup-pill"><Zap size={14}/>{e.warmupSets} aquecimento</span>}</div>{Array.from({length:e.sets},(_,i)=>{const key=index+'-'+i,complete=!!checked[key];return <motion.div layout key={i} className={'session-set session-set-detailed '+(complete?'is-complete':'')}><span className="set-number">{String(i+1).padStart(2,'0')}</span><label><small>CARGA</small><span><input aria-label={`Carga série ${i+1}`} inputMode="decimal" type="number" min="0" max="500" step="0.5" placeholder="0" value={weights[key]??''} onChange={ev=>setWeights(v=>({...v,[key]:ev.target.value}))}/> kg</span></label><label><small>REPS</small><input aria-label={`Repetições série ${i+1}`} inputMode="numeric" type="number" min="0" max="100" placeholder={e.reps} value={reps[key]??''} onChange={ev=>setReps(v=>({...v,[key]:ev.target.value}))}/></label><label><small>RIR</small><select aria-label={`RIR série ${i+1}`} value={rirs[key]??e.targetRir??2} onChange={ev=>setRirs(v=>({...v,[key]:ev.target.value}))}>{[0,1,2,3,4,5].map(v=><option key={v} value={v}>{v}</option>)}</select></label><button aria-label={`Concluir série ${i+1}`} aria-pressed={complete} onClick={()=>toggle(i)}>{complete?<Check size={22}/>:<span/>}</button></motion.div>})}</section>
-    <AnimatePresence>{rest>0&&<motion.section className="session-rest" initial={{opacity:0,y:18}} animate={{opacity:1,y:0}} exit={{opacity:0,y:18}}><div className="rest-ring" style={{'--rest-progress':`${Math.max(0,rest/(e.restSeconds||90))*360}deg`}}><span>{format(rest)}</span></div><div><span className="session-kicker">RECUPERE</span><h3>Respire. A próxima vem forte.</h3></div><button onClick={()=>setRest(0)}>Pular</button></motion.section>}</AnimatePresence>
+    <AnimatePresence>{rest>0&&<motion.section className="session-rest" initial={{opacity:0,y:18}} animate={{opacity:1,y:0}} exit={{opacity:0,y:18}}><div className="rest-ring" style={{'--rest-progress':`${Math.max(0,rest/(e.restSeconds||90))*360}deg`}}><span>{format(rest)}</span></div><div><span className="session-kicker">RECUPERE</span><h3>Respire. A próxima vem forte.</h3></div><button onClick={()=>setRestEndsAt(0)}>Pular</button></motion.section>}</AnimatePresence>
    </main>
-   <footer className="session-footer"><button className="session-prev" disabled={index===0} onClick={()=>change(index-1)}><ChevronLeft size={20}/><span>Anterior</span></button>{index<w.exercises.length-1?<button className="session-next" onClick={()=>change(index+1)}><span>Próximo exercício</span><ChevronRight size={20}/></button>:<button className="session-next" disabled={!done} onClick={()=>{setRunning(false);setSummary(true)}}><span>Finalizar treino</span><Check size={20}/></button>}</footer>
+   <footer className="session-footer"><button className="session-prev" disabled={index===0} onClick={()=>change(index-1)}><ChevronLeft size={20}/><span>Anterior</span></button>{index<w.exercises.length-1?<button className="session-next" onClick={()=>change(index+1)}><span>Próximo exercício</span><ChevronRight size={20}/></button>:<button className="session-next" disabled={!done} onClick={finishSession}><span>Finalizar treino</span><Check size={20}/></button>}</footer>
   </>}
  </motion.div>
 }
