@@ -19,7 +19,7 @@ def test_prompt_injection_patterns_are_blocked_without_blocking_normal_training(
 
 def test_account_rewrites_minor_weight_loss_goal_and_forces_v1():
     state = validate_account_state({
-        "profile":{"name":"Miguel","complete":True,"equipment":["Halteres"],"theme":"energy","experienceVersion":"v2","age":14,"weight":60,"goal":"Perder gordura","experience":"Iniciante","limitations":"Nenhuma","days":3},
+        "profile":{"name":"Miguel","complete":True,"equipment":["Halteres"],"age":14,"weight":60,"goal":"Perder gordura","experience":"Iniciante","limitations":"Nenhuma","days":3},
         "messages":[],"logs":[],"step":7
     }, "test@example.com")
     assert state["profile"]["goal"] == "Criar uma rotina"
