@@ -1,7 +1,7 @@
 export const sampleProfile={name:'Alex',age:26,weight:78,goal:'Ganhar massa muscular',experience:'Intermediário',equipment:['Halteres','Barras','Máquinas','Cabos'],days:4,limitations:'Nenhuma',complete:true};
 export const steps=[
  {key:'name',question:'Primeiro, como você quer que eu te chame?',hint:'Seu primeiro nome já é suficiente.'},
- {key:'age',question:'Qual é a sua idade?',hint:'A partir de 13 anos. Até os 17, treine com acompanhamento de um responsável e profissional.'},
+ {key:'age',question:'Qual é a sua idade?',hint:'A partir de 14 anos. Até os 17, treine com acompanhamento de um responsável e profissional.'},
  {key:'weight',question:'Qual é o seu peso atual, em kg?',hint:'É um ponto de partida, não uma definição de você.'},
  {key:'goal',question:'O que você quer conquistar com o treino?',chips:['Ganhar massa muscular','Melhorar condicionamento','Perder gordura','Criar uma rotina']},
  {key:'experience',question:'Como está sua experiência com a academia?',chips:['Iniciante','Intermediário','Avançado']},
@@ -13,7 +13,7 @@ export function parseAnswer(step,text){
  const t=text.trim();if(!t)return {error:'Me envie uma resposta para continuarmos.'};
  const normalized=t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ');
  if(step.key==='name'){const name=t.replace(/^(?:(?:meu nome (?:é|e)|me chamo|pode me chamar de)\s+)/i,'').trim();if(!name)return {error:'Como você quer que eu te chame?'};if(name.length>40)return {error:'Pode usar um nome com até 40 caracteres?'};return {value:name};}
- if(step.key==='age'){const match=normalized.match(/^(?:(?:eu )?tenho |(?:a )?minha idade (?:e|eh) |idade\s*[:=]?\s*)?(\d{1,3})(?:\s*anos?(?: de idade)?)?[.!]?$/),n=match?Number(match[1]):NaN;if(!Number.isInteger(n)||n<13||n>100)return {error:'Me diga uma idade entre 13 e 100 anos, como “18” ou “18 anos”.'};return {value:n};}
+ if(step.key==='age'){const match=normalized.match(/^(?:(?:eu )?tenho |(?:a )?minha idade (?:e|eh) |idade\s*[:=]?\s*)?(\d{1,3})(?:\s*anos?(?: de idade)?)?[.!]?$/),n=match?Number(match[1]):NaN;if(!Number.isInteger(n)||n<14||n>100)return {error:'Me diga uma idade entre 14 e 100 anos, como “18” ou “18 anos”.'};return {value:n};}
  if(step.key==='weight'){const match=normalized.match(/^(?:(?:eu )?(?:peso|tenho) |meu peso (?:e|eh) )?(\d+(?:[.,]\d+)?)(?:\s*(?:kg|quilos?|quilogramas?))?[.!]?$/),n=match?Number(match[1].replace(',','.')):NaN;if(!Number.isFinite(n)||n<30||n>350)return {error:'Me diga seu peso entre 30 e 350 kg, como “70 kg” ou “78,5”.'};return {value:n};}
  if(step.key==='days'){const match=normalized.match(/^(?:(?:eu )?(?:treino|posso treinar|consigo treinar) )?(\d)(?:\s*(?:dias?|vezes|x))?(?: (?:por|na|a) semana)?[.!]?$/),n=match?Number(match[1]):NaN;if(n<2||n>5||!Number.isInteger(n))return {error:'Vamos começar com 2 a 5 dias por semana. Pode responder “4” ou “4 dias por semana”.'};return {value:n};}
  if(step.key==='equipment'){if(/completa/i.test(t))return {value:['Halteres','Barras','Máquinas','Cabos','Banco']};if(/corporal|sem equipamento/i.test(t))return {value:['Peso corporal']};const eq=[];if(/halter/i.test(t))eq.push('Halteres');if(/barr/i.test(t))eq.push('Barras');if(/máquin|maquin/i.test(t))eq.push('Máquinas');if(/cabo|polia/i.test(t))eq.push('Cabos');if(/banco/i.test(t))eq.push('Banco');return eq.length?{value:[...new Set(eq)]}:{error:'Reconheço halteres, barras, máquinas, cabos, banco ou peso corporal. Quais desses você tem?'};}
