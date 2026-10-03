@@ -18,9 +18,15 @@ def normalize_profile(raw, email=""):
     age = raw.get("age")
     if age is not None and (not isinstance(age, int) or isinstance(age, bool) or not 14 <= age <= 100):
         raise ValueError("O TYVON está disponível a partir de 14 anos.")
+    height = raw.get("height")
+    if height is not None and (not isinstance(height, (int, float)) or isinstance(height, bool) or not 120 <= height <= 230):
+        raise ValueError("Altura inválida.")
     weight = raw.get("weight")
     if weight is not None and (not isinstance(weight, (int, float)) or isinstance(weight, bool) or not 30 <= weight <= 350):
         raise ValueError("Peso inválido.")
+    session_minutes = raw.get("sessionMinutes")
+    if session_minutes is not None and (not isinstance(session_minutes, int) or isinstance(session_minutes, bool) or not 30 <= session_minutes <= 90):
+        raise ValueError("Duração de treino inválida.")
     days = raw.get("days")
     if days is not None and (not isinstance(days, int) or isinstance(days, bool) or not 2 <= days <= 5):
         raise ValueError("Frequência inválida.")
@@ -37,11 +43,13 @@ def normalize_profile(raw, email=""):
         "email": email,
         "name": clean_text(raw.get("name"), 40) or "Você",
         "age": age,
+        "height": height,
         "weight": weight,
         "goal": goal,
         "experience": experience,
         "equipment": equipment,
         "days": days,
+        "sessionMinutes": session_minutes,
         "limitations": limitations,
         "complete": raw.get("complete") is True,
     }
