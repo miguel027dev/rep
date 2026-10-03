@@ -41,7 +41,7 @@ def validate_account_state(raw, email):
     if not isinstance(raw, dict) or not isinstance(raw.get("profile"), dict):
         raise ValueError("Perfil inválido.")
     step = raw.get("step")
-    if not isinstance(step, int) or isinstance(step, bool) or not 0 <= step <= 8:
+    if not isinstance(step, int) or isinstance(step, bool) or not 0 <= step <= 10:
         raise ValueError("Etapa inválida.")
     profile = normalize_profile(raw["profile"], email)
 
@@ -110,6 +110,9 @@ def validate_account_state(raw, email):
                 effort = item["feedback"].get("effort")
                 if isinstance(effort, (int, float)) and not isinstance(effort, bool) and 1 <= effort <= 5:
                     feedback["effort"] = int(effort)
+                mode = clean_text(item["feedback"].get("mode"), 20)
+                if mode in {"detailed", "chat"}:
+                    feedback["mode"] = mode
             try:
                 minutes = min(600, max(1, float(item.get("minutes") or 1)))
                 sets = min(300, max(0, float(item.get("sets") or 0)))
@@ -177,11 +180,13 @@ def load_state(conn, user_id, email):
         "email": email,
         "name": profile_row["name"],
         "age": profile_row["age"],
+        "height": float(profile_row["height"]) if profile_row.get("height") is not None else None,
         "weight": float(profile_row["weight"]) if profile_row["weight"] is not None else None,
         "goal": profile_row["goal"] or "",
         "experience": profile_row["experience"] or "",
         "equipment": _as_json(profile_row["equipment"], []),
         "days": profile_row["days"],
+        "sessionMinutes": int(profile_row["session_minutes"]) if profile_row.get("session_minutes") is not None else None,
         "limitations": profile_row["limitations"] or "Nenhuma",
         "complete": bool(profile_row["complete"]),
     }
@@ -226,16 +231,16 @@ def persist_state(conn, user_id, email, raw, expected_revision=None, migration_m
 
         p = state["profile"]
         cur.execute("""
-          INSERT INTO tyvon_profiles(user_id,email,name,age,weight,goal,experience,equipment,days,limitations,theme,complete,updated_at)
-          VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'essential',%s,NOW())
+          INSERT INTO tyvon_profiles(user_id,email,name,age,height,weight,goal,experience,equipment,days,session_minutes,limitations,theme,complete,updated_at)
+          VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'essential',%s,NOW())
           ON CONFLICT(user_id) DO UPDATE SET
-            email=EXCLUDED.email,name=EXCLUDED.name,age=EXCLUDED.age,weight=EXCLUDED.weight,
+            email=EXCLUDED.email,name=EXCLUDED.name,age=EXCLUDED.age,height=EXCLUDED.height,weight=EXCLUDED.weight,
             goal=EXCLUDED.goal,experience=EXCLUDED.experience,equipment=EXCLUDED.equipment,
-            days=EXCLUDED.days,limitations=EXCLUDED.limitations,theme='essential',
+            days=EXCLUDED.days,session_minutes=EXCLUDED.session_minutes,limitations=EXCLUDED.limitations,theme='essential',
             complete=EXCLUDED.complete,updated_at=NOW()
         """, (
-            user_id, email, p["name"], p["age"], p["weight"], p["goal"], p["experience"],
-            Jsonb(p["equipment"]), p["days"], p["limitations"], p["complete"],
+            user_id, email, p["name"], p["age"], p["height"], p["weight"], p["goal"], p["experience"],
+            Jsonb(p["equipment"]), p["days"], p["sessionMinutes"], p["limitations"], p["complete"],
         ))
 
         if not meta or meta["messages_hash"] != messages_hash:
