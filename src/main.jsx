@@ -105,9 +105,15 @@ function App(){
   const completeProfile={...next,complete:true};
   setProfile(completeProfile);setOnboard(false);notify('Seu plano está pronto.');setTimeout(()=>setPlanReveal(completeProfile),450);
  }
+ function persistWorkoutLog(log){
+  const saved={...log,engine:'tyvon',setLogs:log.setLogs||[],feedback:log.feedback||{},date:new Date().toISOString(),id:crypto.randomUUID()};
+  setLogs(prev=>[...prev,saved]);return saved;
+ }
  function finish(log){
-  setLogs(prev=>[...prev,{...log,engine:'tyvon',setLogs:log.setLogs||[],feedback:log.feedback||{},date:new Date().toISOString(),id:crypto.randomUUID()}]);
-  setActiveWorkout(null);go('analytics');notify('Treino registrado.');
+  persistWorkoutLog(log);setActiveWorkout(null);go('analytics');notify('Treino registrado.');
+ }
+ function finishChatWorkout(log){
+  persistWorkoutLog(log);notify('Treino registrado pelo chat.');
  }
  async function reset(){
   await storage.flush();await accountRequest('DELETE');resetAccountRevision();hydrate(null);go('entry');notify('Seu perfil foi apagado.');
@@ -137,7 +143,7 @@ function App(){
   <div className="workspace"><header className="topbar"><div className="breadcrumb"><div className="mobile-brand"><Logo/></div><button className="mobile-menu" aria-label="Abrir menu" onClick={()=>setMobile(true)}><Menu size={22}/></button><span>Meu espaço</span><ChevronRight size={13}/><strong>{nav.find(n=>n[0]===route)?.[1]}</strong></div><div className="top-actions"><span className="demo-badge"><span/>{storage.status==='saving'?'Salvando…':storage.status==='error'?'Salvamento pendente':'Salvo na sua conta'}</span><button className="header-avatar" aria-label="Abrir perfil" onClick={()=>go('profile')}><Avatar name={p.name}/></button></div></header>
    <main><AnimatePresence mode="wait"><motion.div key={route} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}} transition={{duration:.18}}>
     {route==='overview'&&<Home p={p} plan={plan} logs={logs} go={go} start={setActiveWorkout} ask={ask} nextWorkoutId={nextWorkoutId}/>}
-    {route==='chat'&&<Chat request={chatRequest} clearRequest={()=>setChatRequest(null)} profile={profile} p={p} setProfile={setProfile} messages={messages} setMessages={setMessages} onboard={onboard} step={step} setStep={setStep} completed={completed} plan={plan} go={go} saveStatus={storage.status} start={setActiveWorkout} nextWorkoutId={nextWorkoutId}/>}
+    {route==='chat'&&<Chat request={chatRequest} clearRequest={()=>setChatRequest(null)} profile={profile} p={p} setProfile={setProfile} messages={messages} setMessages={setMessages} onboard={onboard} step={step} setStep={setStep} completed={completed} plan={plan} go={go} saveStatus={storage.status} start={setActiveWorkout} nextWorkoutId={nextWorkoutId} onWorkoutComplete={finishChatWorkout}/>} 
     {route==='workouts'&&<WorkoutsPage p={p} plan={plan} start={setActiveWorkout}/>}
     {route==='analytics'&&<AnalyticsPage logs={logs} go={go}/>}
     {route==='profile'&&<ProfilePage p={p} user={user} logs={logs} setProfile={setProfile} notify={notify} reset={reset} signOut={signOut}/>}
