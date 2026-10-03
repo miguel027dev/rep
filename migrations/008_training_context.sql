@@ -1,0 +1,2 @@
+ALTER TABLE tyvon_profiles ADD COLUMN IF NOT EXISTS height NUMERIC(6,2);
+ALTER TABLE tyvon_profiles ADD COLUMN IF NOT EXISTS session_minutes INTEGER;
