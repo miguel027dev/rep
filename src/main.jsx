@@ -67,7 +67,18 @@ function App(){
  }
  async function loadAccount(){
   setLoading(true);setLoadError('');
-  try{const data=await accountRequest();setUser(data.user);hydrate(data.state);setReady(true)}
+  try{
+   let data=await accountRequest();
+   setUser(data.user);hydrate(data.state);setReady(true);
+   const params=new URLSearchParams(location.search),authFlow=params.has('reset_token')||params.has('auth_error');
+   if(data.state?.profile&&!authFlow)setRoute(data.state.profile.complete?'overview':'chat');
+   else if(!data.state&&data.user&&params.get('welcome')==='google'){
+    const initial={profile:{email:data.user.email,name:data.user.name||'Você',equipment:[],complete:false},logs:[],step:0,messages:[{role:'ai',text:'Oi! Eu sou o TYVON. Vamos conhecer seu ritmo. Como você quer que eu te chame?'}]};
+    try{data=await accountRequest('POST',initial)}catch(e){if(e.status!==409)throw e;data=await accountRequest()}
+    hydrate(data.state);setRoute('chat');
+    history.replaceState({},'',location.pathname);
+   }
+  }
   catch(e){if(e.status===401){setUser(null);setReady(true);resetAccountRevision()}else setLoadError(e.message)}
   finally{setLoading(false)}
  }
@@ -134,7 +145,7 @@ function App(){
    <footer><Logo small/><span>TYVON · PERFORMANCE</span><span className="footer-right">TYVON · PRIVACIDADE POR PADRÃO</span></footer>
   </div>
   <AppDock items={nav} selected={route} onChange={go}/>
-  <AnimatePresence>{activeWorkout&&<WorkoutSession workout={activeWorkout} logs={logs} finish={finish} close={()=>setActiveWorkout(null)} restricted={p.limitations&&p.limitations!=='Nenhuma'}/>}</AnimatePresence>
+  <AnimatePresence>{activeWorkout&&<WorkoutSession workout={activeWorkout} logs={logs} profile={p} athleteName={p.name} finish={finish} close={()=>setActiveWorkout(null)} restricted={p.limitations&&p.limitations!=='Nenhuma'}/>}</AnimatePresence>
   <AnimatePresence>{planReveal&&<WorkoutReveal profile={planReveal} plan={makePlan(planReveal)} onStart={w=>{setPlanReveal(null);setActiveWorkout(w)}} onClose={()=>{setPlanReveal(null);go('overview')}}/>}</AnimatePresence>
   {toast&&<div className="toast" role="status">{toast}</div>}
  </div></>;
