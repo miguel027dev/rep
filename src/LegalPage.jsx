@@ -2,7 +2,7 @@ import React,{useState} from 'react';
 import {ArrowLeft,ArrowUpRight,CheckCircle2,Database,LockKeyhole,ShieldCheck,UserCheck} from 'lucide-react';
 import Logo from './brand/Logo';
 
-const UPDATED='1 de outubro de 2026';
+const UPDATED='2 de outubro de 2026';
 
 function LegalHeader({title,eyebrow,description}){
  return <><header className="legal-topbar"><a href="/" className="legal-brand"><Logo/><span>TYVON</span></a><a href="/" className="legal-back"><ArrowLeft size={16}/>Voltar ao TYVON</a></header><section className="legal-hero"><span className="legal-eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p><small>Última atualização: {UPDATED}</small></section></>
@@ -58,6 +58,7 @@ function Terms(){
   <h2>11. Responsabilidade</h2><p>O TYVON busca fornecer uma experiência segura e útil, mas resultados físicos dependem de fatores individuais e não são garantidos. O usuário deve respeitar seus limites, utilizar técnica adequada e procurar acompanhamento profissional quando necessário.</p>
   <h2>12. Privacidade</h2><p>O tratamento de dados pessoais segue a <a href="/privacidade">Política de Privacidade</a>, que explica dados tratados, finalidades, fornecedores, segurança, retenção e direitos previstos na LGPD.</p>
   <h2>13. Lei aplicável</h2><p>Estes Termos são regidos pela legislação brasileira, incluindo a LGPD, o Marco Civil da Internet e normas de proteção do consumidor quando aplicáveis. Eventuais controvérsias serão tratadas pelo foro competente nos termos da legislação.</p>
+  <h2>14. Comunicações e solicitações</h2><p>O TYVON pode enviar comunicações transacionais necessárias para segurança e funcionamento da conta, como confirmação de e-mail e recuperação de senha. Para solicitações relacionadas a dados pessoais e direitos de privacidade, utilize o canal disponível na <a href="/privacidade#direitos">Política de Privacidade</a>.</p>
  </article></main><LegalFooter/></div>
 }
 
