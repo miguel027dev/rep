@@ -4,12 +4,17 @@ import {parseAnswer,steps,onboardingQuestion} from '../src/logic.js';
 const step=key=>steps.find(s=>s.key===key);
 
 test('onboarding keeps a single TYVON experience and strict bounds',()=>{
- assert.equal(steps.length,8);
+ assert.equal(steps.length,10);
  assert.equal(steps.at(-1).key,'limitations');
  for(const answer of ['18','18 anos','Tenho 18 anos','Minha idade é 18'])assert.deepEqual(parseAnswer(step('age'),answer),{value:18});
  for(const answer of ['12 anos','13 anos','18.5','18 ou 19','101 anos'])assert.ok(parseAnswer(step('age'),answer).error);
+ assert.deepEqual(parseAnswer(step('height'),'1,75 m'),{value:175});
+ assert.deepEqual(parseAnswer(step('height'),'175 cm'),{value:175});
+ assert.ok(parseAnswer(step('height'),'250 cm').error);
  assert.deepEqual(parseAnswer(step('weight'),'78,5 kg'),{value:78.5});
  assert.deepEqual(parseAnswer(step('days'),'4 dias por semana'),{value:4});
+ assert.deepEqual(parseAnswer(step('sessionMinutes'),'60 min'),{value:60});
+ assert.ok(parseAnswer(step('sessionMinutes'),'15 min').error);
  assert.ok(parseAnswer(step('days'),'4 ou 5').error);
  assert.deepEqual(parseAnswer(step('experience'),'sou avançado'),{value:'Avançado'});
  assert.equal(onboardingQuestion(1,{name:'Miguel'}),'Prazer, Miguel! Qual é a sua idade?');
