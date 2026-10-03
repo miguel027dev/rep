@@ -53,7 +53,7 @@ export default function ProfilePage({p,user,logs,setProfile,notify,reset,signOut
   setSharing(card.id);
   try{
    const blob=await pngFromSvg(cardSvg(card,p.name)),file=new File([blob],'tyvon-'+card.id+'.png',{type:'image/png'});
-   const text='TYVON · '+card.title+' · '+card.value+' — '+card.subtitle;
+   const text='TYVON · '+card.title+' · '+card.value+' · '+card.subtitle;
    if(navigator.canShare?.({files:[file]})){await navigator.share({title:'Meu TYVON',text,files:[file]})}
    else if(navigator.share){await navigator.share({title:'Meu TYVON',text})}
    else{const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('Card gerado.')}
@@ -75,7 +75,7 @@ export default function ProfilePage({p,user,logs,setProfile,notify,reset,signOut
 
   {user?.emailVerified===false&&<section className="profile-verification"><LockKeyhole size={20}/><div><strong>Confirme seu e-mail</strong><p>A verificação protege recuperação de senha e propriedade da conta.</p></div><button disabled={verifyState==='sending'||verifyState==='sent'} onClick={resend}>{verifyState==='sent'?'Link enviado':verifyState==='sending'?'Enviando…':verifyState==='unavailable'?'E-mail indisponível':'Enviar verificação'}</button></section>}
 
-  <section className="profile-share-section"><div className="profile-section-title"><div><span>CARDS COMPARTILHÁVEIS</span><h2>Seu treino vira conteúdo.</h2><p>Cards focados em constância e treino — sem peso corporal, foto ou comparação física.</p></div><Sparkles size={22}/></div><div className="profile-share-grid">{cards.map(card=><article className={'profile-share-card share-'+card.id} key={card.id}><span>TYVON / {card.title.toUpperCase()}</span><strong>{card.value}</strong><p>{card.subtitle}</p><div><small>{p.name.split(' ')[0]}</small><button disabled={!!sharing} onClick={()=>share(card)}>{sharing===card.id?<Download size={17}/>:<Share2 size={17}/>} {sharing===card.id?'Gerando…':'Compartilhar'}</button></div></article>)}</div></section>
+  <section className="profile-share-section"><div className="profile-section-title"><div><span>CARDS COMPARTILHÁVEIS</span><h2>Seu treino vira conteúdo.</h2><p>Cards focados em constância e treino. Sem peso corporal, foto ou comparação física.</p></div><Sparkles size={22}/></div><div className="profile-share-grid">{cards.map(card=><article className={'profile-share-card share-'+card.id} key={card.id}><span>TYVON / {card.title.toUpperCase()}</span><strong>{card.value}</strong><p>{card.subtitle}</p><div><small>{p.name.split(' ')[0]}</small><button disabled={!!sharing} onClick={()=>share(card)}>{sharing===card.id?<Download size={17}/>:<Share2 size={17}/>} {sharing===card.id?'Gerando…':'Compartilhar'}</button></div></article>)}</div></section>
 
   <div className="profile-v1-layout">
    <form className="profile-editor-card" onSubmit={save}><div className="profile-section-title"><div><span>CONFIGURAÇÃO</span><h2>Seu ponto de partida</h2></div><UserRound size={22}/></div>
