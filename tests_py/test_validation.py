@@ -19,10 +19,19 @@ def test_prompt_injection_patterns_are_blocked_without_blocking_normal_training(
 
 def test_account_rewrites_minor_weight_loss_goal():
     state = validate_account_state({
-        "profile":{"name":"Miguel","complete":True,"equipment":["Halteres"],"age":14,"weight":60,"goal":"Perder gordura","experience":"Iniciante","limitations":"Nenhuma","days":3},
-        "messages":[],"logs":[],"step":7
+        "profile":{"name":"Miguel","complete":True,"equipment":["Halteres"],"age":14,"height":170,"weight":60,"goal":"Perder gordura","experience":"Iniciante","limitations":"Nenhuma","days":3,"sessionMinutes":45},
+        "messages":[],"logs":[],"step":9
     }, "test@example.com")
     assert state["profile"]["goal"] == "Criar uma rotina"
+
+
+def test_profile_accepts_training_context():
+    state = validate_account_state({
+        "profile":{"name":"Teste","complete":False,"equipment":[],"age":18,"height":175.5,"weight":70,"goal":"","experience":"","limitations":"Nenhuma","days":None,"sessionMinutes":60},
+        "messages":[],"logs":[],"step":3
+    }, "test@example.com")
+    assert state["profile"]["height"] == 175.5
+    assert state["profile"]["sessionMinutes"] == 60
 
 
 def test_profile_rejects_users_below_minimum_age():

@@ -1,6 +1,6 @@
 from backend.workouts import make_plan, sanitize_workout_cards, select_workout_cards
 
-PROFILE={"name":"Miguel","age":25,"goal":"Ganhar massa muscular","experience":"Avançado","equipment":["Halteres","Banco","Cabos","Máquinas"],"days":4,"limitations":"Nenhuma"}
+PROFILE={"name":"Miguel","age":25,"height":175,"weight":78,"goal":"Ganhar massa muscular","experience":"Avançado","equipment":["Halteres","Banco","Cabos","Máquinas"],"days":4,"sessionMinutes":60,"limitations":"Nenhuma"}
 
 
 def test_adult_plan_is_complete():
@@ -11,10 +11,16 @@ def test_adult_plan_is_complete():
         assert all(2<=e["sets"]<=3 for w in plan for e in w["exercises"])
 
 
+def test_session_duration_caps_exercises():
+    plan=make_plan({**PROFILE,"days":3,"sessionMinutes":35})
+    assert all(len(w["exercises"])<=5 for w in plan)
+
+
 def test_minor_plan_is_conservative():
     plan=make_plan({**PROFILE,"age":14,"days":5})
     assert len(plan)<=3
     assert all(w["intensity"]=="3–4 repetições de reserva" for w in plan)
+    assert all(len(w["exercises"])<=6 for w in plan)
     assert all(e["sets"]==2 and e["targetRir"]==4 for w in plan for e in w["exercises"])
 
 
