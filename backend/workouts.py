@@ -4,54 +4,99 @@ import unicodedata
 TRAINING_METHOD = "TYVON Performance · progressão controlada"
 
 
-def movement(key, name, group, equipment, tip, compound=False):
-    return {"id": key, "name": name, "group": group, "equipment": equipment, "tip": tip, "compound": compound}
+def movement(key, name, group, equipment, tip, compound=False, requires=None):
+    return {
+        "id": key,
+        "name": name,
+        "group": group,
+        "equipment": equipment,
+        "tip": tip,
+        "compound": compound,
+        "requires": requires or [],
+    }
 
 
 LIB = {
-    "chest_machine": movement("chest_machine", "Supino na máquina", "Peitoral", "Máquinas", "Mantenha as escápulas apoiadas e controle a descida.", True),
-    "db_bench": movement("db_bench", "Supino com halteres", "Peitoral", "Halteres", "Desça com controle e mantenha os ombros estáveis.", True),
-    "pushup": movement("pushup", "Flexão inclinada", "Peitoral", "Peso corporal", "Use um apoio firme e mantenha o corpo alinhado.", True),
-    "incline_db": movement("incline_db", "Supino inclinado com halteres", "Peitoral", "Halteres", "Use amplitude confortável e controle o retorno.", True),
+    "barbell_bench": movement("barbell_bench", "Supino reto com barra", "Peitoral", "Barras", "Mantenha os pés firmes, escápulas apoiadas e controle a descida.", True, ["Barras", "Banco"]),
+    "db_bench": movement("db_bench", "Supino reto com halteres", "Peitoral", "Halteres", "Desça com controle e mantenha os ombros estáveis.", True, ["Halteres", "Banco"]),
+    "chest_machine": movement("chest_machine", "Supino na máquina", "Peitoral", "Máquinas", "Mantenha as escápulas apoiadas e controle a volta.", True),
+    "pushup": movement("pushup", "Flexão de braços", "Peitoral", "Peso corporal", "Mantenha o corpo alinhado e use amplitude confortável.", True),
+    "incline_barbell": movement("incline_barbell", "Supino inclinado com barra", "Peitoral", "Barras", "Use inclinação moderada e mantenha as escápulas apoiadas.", True, ["Barras", "Banco"]),
+    "incline_db": movement("incline_db", "Supino inclinado com halteres", "Peitoral", "Halteres", "Controle a descida e evite elevar os ombros.", True, ["Halteres", "Banco"]),
+    "incline_pushup": movement("incline_pushup", "Flexão inclinada", "Peitoral", "Peso corporal", "Use um apoio firme e mantenha o corpo alinhado.", True),
+    "decline_pushup": movement("decline_pushup", "Flexão com pés elevados", "Peitoral", "Peso corporal", "Mantenha tronco firme e pare antes de perder a postura.", True),
+    "cable_fly": movement("cable_fly", "Crucifixo no cabo", "Peitoral", "Cabos", "Aproxime as mãos sem perder o controle dos ombros."),
     "fly": movement("fly", "Crucifixo na máquina", "Peitoral", "Máquinas", "Feche os braços sem perder o controle dos ombros."),
-    "row_cable": movement("row_cable", "Remada baixa", "Costas", "Cabos", "Puxe com os cotovelos e evite balançar o tronco.", True),
-    "row_machine": movement("row_machine", "Remada na máquina", "Costas", "Máquinas", "Mantenha o peito estável e controle a volta.", True),
-    "row_db": movement("row_db", "Remada unilateral", "Costas", "Halteres", "Apoie o tronco e mantenha a coluna neutra.", True),
-    "pulldown": movement("pulldown", "Puxada na polia", "Costas", "Cabos", "Puxe em direção ao peito sem usar impulso.", True),
+    "pulldown": movement("pulldown", "Puxada aberta na polia", "Costas", "Cabos", "Puxe em direção ao peito sem usar impulso.", True),
+    "neutral_pulldown": movement("neutral_pulldown", "Puxada neutra", "Costas", "Cabos", "Mantenha o tronco estável e conduza com os cotovelos.", True),
     "pulldown_machine": movement("pulldown_machine", "Puxada na máquina", "Costas", "Máquinas", "Controle a volta e mantenha o tronco estável.", True),
+    "row_cable": movement("row_cable", "Remada baixa", "Costas", "Cabos", "Puxe com os cotovelos e evite balançar o tronco.", True),
+    "row_machine": movement("row_machine", "Remada articulada", "Costas", "Máquinas", "Mantenha o peito estável e controle a volta.", True),
+    "row_db": movement("row_db", "Remada unilateral com halter", "Costas", "Halteres", "Apoie o tronco e mantenha a coluna neutra.", True),
+    "chest_supported_row": movement("chest_supported_row", "Remada apoiada com halteres", "Costas", "Halteres", "Apoie o peito no banco e puxe sem tirar o tronco do apoio.", True, ["Halteres", "Banco"]),
+    "inverted_row": movement("inverted_row", "Remada invertida", "Costas", "Peso corporal", "Mantenha corpo alinhado e puxe o peito em direção ao apoio.", True),
     "back_bw": movement("back_bw", "Elevação de braços em W", "Costas", "Peso corporal", "Mova os braços com controle sem forçar a lombar."),
+    "barbell_squat": movement("barbell_squat", "Agachamento com barra", "Quadríceps", "Barras", "Mantenha os pés firmes e a coluna estável durante a descida.", True),
     "legpress": movement("legpress", "Leg press", "Quadríceps", "Máquinas", "Mantenha a lombar apoiada e use amplitude confortável.", True),
+    "hack_squat": movement("hack_squat", "Hack squat", "Quadríceps", "Máquinas", "Mantenha as costas apoiadas e controle a descida.", True),
     "goblet": movement("goblet", "Agachamento goblet", "Quadríceps", "Halteres", "Mantenha os pés firmes e o tronco estável.", True),
     "squat_bw": movement("squat_bw", "Agachamento livre", "Quadríceps", "Peso corporal", "Desça com controle até uma amplitude confortável.", True),
+    "split_squat": movement("split_squat", "Agachamento dividido", "Quadríceps", "Peso corporal", "Mantenha equilíbrio e controle a descida."),
+    "reverse_lunge": movement("reverse_lunge", "Afundo reverso", "Quadríceps", "Peso corporal", "Dê um passo para trás e mantenha o tronco estável."),
     "legext": movement("legext", "Cadeira extensora", "Quadríceps", "Máquinas", "Estenda os joelhos sem tirar o quadril do banco."),
-    "rdl": movement("rdl", "Levantamento romeno", "Posterior", "Halteres", "Leve o quadril para trás mantendo a coluna neutra.", True),
+    "barbell_rdl": movement("barbell_rdl", "Levantamento romeno com barra", "Posterior", "Barras", "Leve o quadril para trás mantendo a coluna neutra.", True),
+    "rdl": movement("rdl", "Levantamento romeno com halteres", "Posterior", "Halteres", "Leve o quadril para trás mantendo a coluna neutra.", True),
+    "single_leg_rdl": movement("single_leg_rdl", "RDL unilateral", "Posterior", "Peso corporal", "Controle o quadril e use apoio se necessário.", True),
     "legcurl": movement("legcurl", "Mesa flexora", "Posterior", "Máquinas", "Flexione os joelhos sem levantar o quadril."),
+    "seated_legcurl": movement("seated_legcurl", "Flexora sentada", "Posterior", "Máquinas", "Mantenha o quadril apoiado e controle a volta."),
+    "hip_thrust": movement("hip_thrust", "Hip thrust", "Glúteos", "Barras", "Mantenha o tronco estável e finalize sem hiperestender a lombar.", True, ["Barras", "Banco"]),
     "hipbridge": movement("hipbridge", "Ponte de glúteos", "Glúteos", "Peso corporal", "Eleve o quadril sem exagerar a curvatura lombar.", True),
+    "single_leg_bridge": movement("single_leg_bridge", "Ponte unilateral", "Glúteos", "Peso corporal", "Mantenha a pelve estável durante o movimento.", True),
     "hip_machine": movement("hip_machine", "Extensão de quadril na máquina", "Glúteos", "Máquinas", "Controle o movimento e mantenha a pelve estável."),
     "shoulder_press": movement("shoulder_press", "Desenvolvimento na máquina", "Ombros", "Máquinas", "Controle a descida sem compensar com a lombar.", True),
     "db_press": movement("db_press", "Desenvolvimento com halteres", "Ombros", "Halteres", "Use amplitude confortável e tronco estável.", True),
-    "wall_press": movement("wall_press", "Flexão na parede", "Ombros", "Peso corporal", "Mantenha o corpo alinhado e use ritmo controlado.", True),
+    "pike_pushup": movement("pike_pushup", "Flexão pike", "Ombros", "Peso corporal", "Mantenha o tronco firme e use amplitude confortável.", True),
     "lateral": movement("lateral", "Elevação lateral", "Ombros", "Halteres", "Eleve com controle sem usar impulso."),
+    "cable_lateral": movement("cable_lateral", "Elevação lateral no cabo", "Ombros", "Cabos", "Mantenha tensão contínua e evite impulso."),
     "rear_delt": movement("rear_delt", "Crucifixo inverso", "Ombros", "Máquinas", "Abra os braços mantendo o peito apoiado."),
-    "curl_db": movement("curl_db", "Rosca com halteres", "Bíceps", "Halteres", "Mantenha os cotovelos estáveis."),
+    "face_pull": movement("face_pull", "Face pull", "Ombros", "Cabos", "Puxe em direção ao rosto mantendo os ombros estáveis."),
+    "barbell_curl": movement("barbell_curl", "Rosca direta com barra", "Bíceps", "Barras", "Mantenha os cotovelos estáveis e evite balanço."),
+    "curl_db": movement("curl_db", "Rosca alternada com halteres", "Bíceps", "Halteres", "Mantenha os cotovelos próximos ao corpo."),
+    "incline_curl": movement("incline_curl", "Rosca inclinada com halteres", "Bíceps", "Halteres", "Mantenha o braço estável e controle a descida.", False, ["Halteres", "Banco"]),
     "curl_cable": movement("curl_cable", "Rosca na polia", "Bíceps", "Cabos", "Evite balançar o tronco."),
+    "hammer_curl": movement("hammer_curl", "Rosca martelo", "Bíceps", "Halteres", "Mantenha punhos neutros e cotovelos estáveis."),
+    "preacher_machine": movement("preacher_machine", "Rosca Scott na máquina", "Bíceps", "Máquinas", "Mantenha os braços apoiados durante toda a série."),
     "triceps": movement("triceps", "Tríceps na polia", "Tríceps", "Cabos", "Estenda os cotovelos sem mover os ombros."),
-    "triceps_db": movement("triceps_db", "Tríceps com halter", "Tríceps", "Halteres", "Mantenha o cotovelo estável e use carga confortável."),
+    "overhead_cable": movement("overhead_cable", "Tríceps acima da cabeça no cabo", "Tríceps", "Cabos", "Mantenha os cotovelos apontados para frente e controle a volta."),
+    "triceps_db": movement("triceps_db", "Tríceps francês com halter", "Tríceps", "Halteres", "Mantenha os cotovelos estáveis e use carga confortável."),
+    "close_pushup": movement("close_pushup", "Flexão fechada", "Tríceps", "Peso corporal", "Mantenha os cotovelos controlados e o corpo alinhado.", True),
+    "calf_machine": movement("calf_machine", "Panturrilha na máquina", "Panturrilha", "Máquinas", "Use amplitude confortável e evite impulso."),
     "calf": movement("calf", "Elevação de panturrilha", "Panturrilha", "Peso corporal", "Suba e desça sem impulso e use apoio para equilíbrio."),
+    "cable_crunch": movement("cable_crunch", "Abdominal no cabo", "Core", "Cabos", "Mova o tronco com controle e evite puxar com os braços."),
     "plank": movement("plank", "Prancha", "Core", "Peso corporal", "Respire normalmente e pare antes de perder o alinhamento."),
     "deadbug": movement("deadbug", "Dead bug", "Core", "Peso corporal", "Mantenha a lombar estável e mova braços e pernas devagar."),
 }
 
 
-def _has(profile, equipment):
-    return equipment == "Peso corporal" or equipment in (profile.get("equipment") or [])
+def _has(profile, exercise):
+    if exercise["equipment"] == "Peso corporal":
+        return True
+    equipment = set(profile.get("equipment") or [])
+    required = exercise.get("requires") or []
+    if required:
+        return all(item in equipment for item in required)
+    return exercise["equipment"] in equipment
 
 
 def _pick(profile, *keys):
-    for key in keys:
-        if _has(profile, LIB[key]["equipment"]):
-            return LIB[key]
-    return LIB[keys[-1]]
+    exercises = [LIB[key] for key in keys]
+    for exercise in exercises:
+        if _has(profile, exercise):
+            return exercise
+    for exercise in exercises:
+        if exercise["equipment"] == "Peso corporal":
+            return exercise
+    return exercises[-1]
 
 
 def _clean(text):
@@ -70,7 +115,7 @@ def _prescribe(exercise, profile):
         rir = 4
         rest = 120 if exercise["compound"] else 75
     else:
-        sets = 2 if beginner and not exercise["compound"] else 3
+        sets = 3 if exercise["compound"] else (2 if beginner else 3)
         if goal == "Ganhar massa muscular":
             reps = "6–10" if exercise["compound"] else "10–15"
         elif goal == "Melhorar condicionamento":
@@ -91,58 +136,87 @@ def _prescribe(exercise, profile):
     }
 
 
+def _exercise_limit(profile, minor):
+    minutes = max(30, min(90, int(profile.get("sessionMinutes") or 60)))
+    if minor:
+        return min(6, 5 if minutes <= 45 else 6)
+    if minutes <= 35:
+        return 5
+    if minutes <= 45:
+        return 6
+    if minutes <= 60:
+        return 8
+    return 9
+
+
+def _unique(exercises):
+    out = []
+    seen = set()
+    for exercise in exercises:
+        if exercise and exercise["id"] not in seen:
+            seen.add(exercise["id"])
+            out.append(exercise)
+    return out
+
+
 def _templates(profile):
-    chest = _pick(profile, "chest_machine", "db_bench", "pushup")
-    chest2 = _pick(profile, "incline_db", "fly", "pushup")
-    row = _pick(profile, "row_cable", "row_machine", "row_db", "back_bw")
-    pull = _pick(profile, "pulldown", "pulldown_machine", "row_cable", "row_machine", "row_db", "back_bw")
-    squat = _pick(profile, "legpress", "goblet", "squat_bw")
-    quad = _pick(profile, "legext", "goblet", "squat_bw")
-    hinge = _pick(profile, "rdl", "hipbridge")
-    ham = _pick(profile, "legcurl", "rdl", "hipbridge")
-    glute = _pick(profile, "hip_machine", "hipbridge")
-    press = _pick(profile, "shoulder_press", "db_press", "wall_press")
-    lateral = _pick(profile, "lateral", "rear_delt", "wall_press")
-    rear = _pick(profile, "rear_delt", "lateral", "back_bw")
-    curl = _pick(profile, "curl_cable", "curl_db", "plank")
-    tri = _pick(profile, "triceps", "triceps_db", "pushup")
-    calf = LIB["calf"]
-    core = LIB["plank"]
+    chest = _pick(profile, "barbell_bench", "db_bench", "chest_machine", "pushup")
+    chest2 = _pick(profile, "incline_barbell", "incline_db", "chest_machine", "incline_pushup")
+    chest3 = _pick(profile, "cable_fly", "fly", "decline_pushup", "pushup")
+    row = _pick(profile, "row_cable", "row_machine", "chest_supported_row", "row_db", "inverted_row", "back_bw")
+    row2 = _pick(profile, "chest_supported_row", "row_machine", "row_db", "row_cable", "inverted_row", "back_bw")
+    pull = _pick(profile, "pulldown", "pulldown_machine", "neutral_pulldown", "inverted_row", "back_bw")
+    pull2 = _pick(profile, "neutral_pulldown", "pulldown", "pulldown_machine", "inverted_row", "back_bw")
+    squat = _pick(profile, "barbell_squat", "hack_squat", "legpress", "goblet", "squat_bw")
+    quad = _pick(profile, "legext", "hack_squat", "goblet", "split_squat")
+    unilateral = _pick(profile, "split_squat", "reverse_lunge")
+    hinge = _pick(profile, "barbell_rdl", "rdl", "single_leg_rdl", "hipbridge")
+    ham = _pick(profile, "legcurl", "seated_legcurl", "rdl", "single_leg_rdl")
+    glute = _pick(profile, "hip_thrust", "hip_machine", "single_leg_bridge", "hipbridge")
+    press = _pick(profile, "shoulder_press", "db_press", "pike_pushup")
+    lateral = _pick(profile, "cable_lateral", "lateral", "pike_pushup")
+    rear = _pick(profile, "rear_delt", "face_pull", "back_bw")
+    curl = _pick(profile, "barbell_curl", "curl_cable", "curl_db")
+    curl2 = _pick(profile, "incline_curl", "preacher_machine", "hammer_curl", "curl_db")
+    tri = _pick(profile, "triceps", "triceps_db", "close_pushup")
+    tri2 = _pick(profile, "overhead_cable", "triceps_db", "close_pushup")
+    calf = _pick(profile, "calf_machine", "calf")
+    core = _pick(profile, "cable_crunch", "plank")
     core2 = LIB["deadbug"]
     days = max(2, min(5, int(profile.get("days") or 3)))
     minor = isinstance(profile.get("age"), int) and profile["age"] < 18
 
     if minor:
         return [
-            ("Corpo inteiro A", "Quadríceps · peito · costas · core", [squat, chest, row, hinge, core]),
-            ("Corpo inteiro B", "Posterior · ombros · costas · core", [hinge, press, pull, squat, core2]),
-            ("Corpo inteiro C", "Pernas · peito · costas · ombros", [squat, chest2, row, lateral, core]),
+            ("Corpo inteiro A", "Quadríceps · peito · costas · core", [squat, chest, row, hinge, core, calf]),
+            ("Corpo inteiro B", "Posterior · ombros · costas · core", [hinge, press, pull, squat, core2, calf]),
+            ("Corpo inteiro C", "Pernas · peito · costas · ombros", [squat, chest2, row, lateral, ham, core]),
         ][:min(days, 3)]
 
     if days == 2:
         return [
-            ("Corpo inteiro A", "Peito · costas · quadríceps · ombros", [squat, chest, row, hinge, lateral, core]),
-            ("Corpo inteiro B", "Posterior · costas · peito · braços", [hinge, pull, chest2, quad, curl, tri]),
+            ("Corpo inteiro A", "Peito · costas · pernas · ombros · braços", [squat, chest, row, hinge, press, curl, tri, core]),
+            ("Corpo inteiro B", "Posterior · costas · peito · pernas · braços", [hinge, pull, chest2, quad, row2, curl2, tri2, calf]),
         ]
     if days == 3:
         return [
-            ("Corpo inteiro A", "Peito · costas · quadríceps", [chest, row, squat, lateral, curl, core]),
-            ("Corpo inteiro B", "Posterior · ombros · costas", [hinge, press, pull, quad, tri, calf]),
-            ("Corpo inteiro C", "Pernas · peito · costas · braços", [squat, chest2, row, ham, curl, tri]),
+            ("Push", "Peito · ombros · tríceps", [chest, chest2, chest3, press, lateral, tri, tri2, core]),
+            ("Pull", "Costas · bíceps · deltoides posteriores", [pull, row, row2, pull2, rear, curl, curl2, core2]),
+            ("Pernas", "Quadríceps · posterior · glúteos · panturrilha", [squat, quad, hinge, ham, glute, unilateral, calf, core]),
         ]
     if days == 4:
         return [
-            ("Superiores A", "Peito · costas · ombros · braços", [chest, row, press, lateral, curl, tri]),
-            ("Inferiores A", "Quadríceps · posterior · glúteos · core", [squat, hinge, quad, ham, calf, core]),
-            ("Superiores B", "Costas · peito · deltoides · braços", [pull, chest2, row, rear, curl, tri]),
-            ("Inferiores B", "Pernas · posterior · glúteos · core", [squat, ham, hinge, glute, calf, core2]),
+            ("Superiores A", "Peito · costas · ombros · braços", [chest, chest2, row, pull, press, lateral, curl, tri]),
+            ("Inferiores A", "Quadríceps · posterior · glúteos · core", [squat, quad, hinge, ham, glute, calf, core]),
+            ("Superiores B", "Costas · peito · deltoides · braços", [pull2, row2, chest, chest3, rear, lateral, curl2, tri2]),
+            ("Inferiores B", "Pernas · posterior · glúteos · core", [squat, unilateral, hinge, ham, glute, calf, core2]),
         ]
     return [
-        ("Push", "Peito · ombros · tríceps", [chest, chest2, press, lateral, tri, core]),
-        ("Pull", "Costas · bíceps · deltoides posteriores", [pull, row, rear, curl, core, calf]),
-        ("Pernas", "Quadríceps · posterior · glúteos", [squat, quad, hinge, ham, glute, calf]),
-        ("Superiores", "Peito · costas · ombros · braços", [chest, row, press, lateral, curl, tri]),
-        ("Inferiores", "Pernas · posterior · core", [squat, hinge, quad, ham, calf, core2]),
+        ("Push", "Peito · ombros · tríceps", [chest, chest2, chest3, press, lateral, tri, tri2, core]),
+        ("Pull", "Costas · bíceps · deltoides posteriores", [pull, row, row2, pull2, rear, curl, curl2, core2]),
+        ("Pernas", "Quadríceps · posterior · glúteos", [squat, quad, hinge, ham, glute, unilateral, calf, core]),
+        ("Superiores", "Peito · costas · ombros · braços", [chest, chest2, row, pull, press, lateral, curl, tri]),
+        ("Inferiores", "Pernas · posterior · glúteos · core", [squat, quad, hinge, ham, glute, calf, core2]),
     ]
 
 
@@ -150,27 +224,29 @@ def make_plan(profile=None):
     profile = profile or {}
     minor = isinstance(profile.get("age"), int) and profile["age"] < 18
     restricted = bool(profile.get("limitations")) and profile.get("limitations") != "Nenhuma"
+    limit = _exercise_limit(profile, minor)
     plan = []
-    for idx, (name, focus, exercises) in enumerate(_templates(profile)):
-        prescribed = [_prescribe(exercise, profile) for exercise in exercises]
+    for idx, (name, focus, moves) in enumerate(_templates(profile)):
+        exercises = [_prescribe(exercise, profile) for exercise in _unique(moves) if _has(profile, exercise) or exercise["equipment"] == "Peso corporal"][:limit]
+        minutes = min(int(profile.get("sessionMinutes") or 60), max(35, len(exercises) * 7))
         plan.append({
             "id": idx,
             "name": name,
             "focus": focus,
             "kind": "strength",
             "method": "TYVON · técnica supervisionada" if minor else TRAINING_METHOD,
-            "minutes": 45 if minor else (55 if len(prescribed) >= 6 else 45),
+            "minutes": minutes,
             "intensity": "3–4 repetições de reserva" if minor else ("2–3 repetições de reserva" if profile.get("experience") == "Iniciante" else "1–3 repetições de reserva"),
-            "recovery": "Distribua as sessões na semana e deixe os grupos musculares se recuperarem antes de treiná-los pesado novamente.",
+            "recovery": "Distribua as sessões na semana e deixe os grupos musculares se recuperarem antes de repetir trabalho pesado.",
             "note": (
-                "Dos 13 aos 17, priorize técnica, supervisão e cargas confortáveis; não treine até a falha."
+                "Dos 14 aos 17, priorize técnica, supervisão e cargas confortáveis; não use progressão automática de carga."
                 if minor else
                 "Você informou uma restrição. Valide exercícios e cargas com um profissional."
                 if restricted else
-                "Registre cargas e repetições. Aumente a dificuldade apenas quando a execução estiver estável."
+                "Registre carga, repetições e RIR. O TYVON usa seu próprio histórico para sugerir o próximo passo."
             ),
-            "progression": "Ajuste cargas com orientação profissional." if minor else "Ao atingir o topo da faixa com boa técnica e margem, use um pequeno aumento de carga na próxima sessão.",
-            "exercises": prescribed,
+            "progression": "Ajuste cargas com orientação profissional." if minor else "Quando você domina o topo da faixa com técnica estável e margem, o TYVON pode sugerir um pequeno aumento na próxima sessão.",
+            "exercises": exercises,
         })
     return plan
 
@@ -216,7 +292,7 @@ def sanitize_workout_cards(cards):
         if not isinstance(raw, dict) or not isinstance(raw.get("exercises"), list) or not raw.get("name"):
             continue
         exercises = []
-        for item in raw["exercises"][:8]:
+        for item in raw["exercises"][:10]:
             if not isinstance(item, dict) or not item.get("name"):
                 continue
             try:
@@ -232,6 +308,7 @@ def sanitize_workout_cards(cards):
                 "group": _bounded_text(item.get("group"), 60),
                 "equipment": _bounded_text(item.get("equipment"), 40),
                 "tip": _bounded_text(item.get("tip"), 300),
+                "compound": item.get("compound") is True,
                 "sets": sets,
                 "warmupSets": warmup,
                 "restSeconds": rest,
