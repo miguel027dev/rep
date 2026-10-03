@@ -5,36 +5,59 @@ function formatMinutes(minutes){
  return n<60?`${n} min`:`${Math.floor(n/60)}h ${String(n%60).padStart(2,'0')}min`;
 }
 
-function storySvg(workout,log,name){
+function insightSvg(workout,log,name){
  const athlete=esc((name||'Atleta').split(' ')[0]);
  const title=esc(workout?.name||log?.name||'Treino');
  const duration=esc(formatMinutes(log?.minutes));
- const sets=esc(Math.round(Number(log?.sets)||0));
- const groups=[...new Set((log?.setLogs||[]).map(s=>s.group).filter(Boolean))].slice(0,4);
- const exercises=[...new Set((log?.setLogs||[]).map(s=>s.exerciseName).filter(Boolean))].slice(0,5);
+ const sets=Math.round(Number(log?.sets)||0);
+ const setLogs=Array.isArray(log?.setLogs)?log.setLogs:[];
+ const reps=setLogs.reduce((sum,item)=>sum+Math.max(0,Number(item?.reps)||0),0);
+ const groups=[...new Set(setLogs.map(s=>s.group).filter(Boolean))].slice(0,4);
+ const exercises=[...new Set(setLogs.map(s=>s.exerciseName).filter(Boolean))].slice(0,5);
  const groupsText=esc(groups.join(' · ')||workout?.focus||'Treino registrado');
- const rows=exercises.map((exercise,i)=>`<text x="120" y="${1050+i*92}" fill="#d5d5d9" font-size="34" font-family="Arial,Helvetica,sans-serif"><tspan fill="#707078">${String(i+1).padStart(2,'0')}</tspan><tspan dx="28">${esc(exercise)}</tspan></text>`).join('');
+ const effort=Number(log?.feedback?.effort)||0;
+ const effortLabel=effort>=5?'Pesado':effort>=3?'Na medida':effort>0?'Leve':'Registrado';
+ const rows=exercises.map((exercise,i)=>`<text x="118" y="${1220+i*88}" fill="#dadade" font-size="31" font-family="Arial,Helvetica,sans-serif"><tspan fill="#66666d">${String(i+1).padStart(2,'0')}</tspan><tspan dx="26">${esc(exercise)}</tspan></text>`).join('');
  return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
-  <rect width="1080" height="1920" fill="#070708"/>
-  <rect x="54" y="54" width="972" height="1812" rx="54" fill="#111113" stroke="#303035" stroke-width="2"/>
-  <text x="110" y="165" fill="#f4f4f5" font-size="58" font-family="Arial,Helvetica,sans-serif" font-weight="800" letter-spacing="-3">TYVON</text>
-  <text x="110" y="220" fill="#77777e" font-size="22" font-family="Arial,Helvetica,sans-serif" letter-spacing="5">TREINO CONCLUÍDO</text>
-  <line x1="110" x2="970" y1="292" y2="292" stroke="#2b2b30"/>
-  <text x="110" y="430" fill="#8e8e96" font-size="24" font-family="Arial,Helvetica,sans-serif" letter-spacing="3">SESSÃO</text>
-  <text x="110" y="550" fill="#f4f4f5" font-size="70" font-family="Arial,Helvetica,sans-serif" font-weight="700">${title}</text>
-  <foreignObject x="110" y="590" width="830" height="120"><div xmlns="http://www.w3.org/1999/xhtml" style="font:30px Arial;color:#9b9ba3;line-height:1.45">${groupsText}</div></foreignObject>
-  <rect x="110" y="760" width="400" height="190" rx="28" fill="#18181b" stroke="#2d2d32"/>
-  <text x="145" y="820" fill="#77777e" font-size="20" font-family="Arial">TEMPO</text>
-  <text x="145" y="900" fill="#f4f4f5" font-size="58" font-family="Arial" font-weight="700">${duration}</text>
-  <rect x="550" y="760" width="400" height="190" rx="28" fill="#18181b" stroke="#2d2d32"/>
-  <text x="585" y="820" fill="#77777e" font-size="20" font-family="Arial">SÉRIES</text>
-  <text x="585" y="900" fill="#f4f4f5" font-size="58" font-family="Arial" font-weight="700">${sets}</text>
-  <text x="110" y="1010" fill="#77777e" font-size="20" font-family="Arial" letter-spacing="3">O QUE FOI TREINADO</text>
+  <defs>
+   <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#111113"/><stop offset="1" stop-color="#070708"/></linearGradient>
+   <radialGradient id="glow" cx="85%" cy="8%" r="50%"><stop offset="0" stop-color="#ffffff" stop-opacity=".08"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1080" height="1920" fill="#060607"/>
+  <rect x="48" y="48" width="984" height="1824" rx="56" fill="url(#bg)" stroke="#303035" stroke-width="2"/>
+  <rect x="48" y="48" width="984" height="1824" rx="56" fill="url(#glow)"/>
+
+  <text x="112" y="158" fill="#f5f5f6" font-size="58" font-family="Arial,Helvetica,sans-serif" font-weight="800" letter-spacing="-3">TYVON</text>
+  <text x="112" y="215" fill="#707078" font-size="21" font-family="Arial,Helvetica,sans-serif" letter-spacing="5">INSIGHTS DO TREINO</text>
+  <line x1="112" x2="968" y1="284" y2="284" stroke="#29292e"/>
+
+  <text x="112" y="405" fill="#777780" font-size="22" font-family="Arial,Helvetica,sans-serif" letter-spacing="3">SESSÃO</text>
+  <text x="112" y="510" fill="#f4f4f5" font-size="68" font-family="Arial,Helvetica,sans-serif" font-weight="700">${title}</text>
+  <text x="112" y="570" fill="#9a9aa2" font-size="29" font-family="Arial,Helvetica,sans-serif">${groupsText}</text>
+
+  <rect x="112" y="680" width="265" height="190" rx="28" fill="#171719" stroke="#2d2d32"/>
+  <text x="143" y="735" fill="#72727a" font-size="18" font-family="Arial" letter-spacing="2">TEMPO</text>
+  <text x="143" y="817" fill="#f4f4f5" font-size="49" font-family="Arial" font-weight="700">${duration}</text>
+
+  <rect x="405" y="680" width="265" height="190" rx="28" fill="#171719" stroke="#2d2d32"/>
+  <text x="436" y="735" fill="#72727a" font-size="18" font-family="Arial" letter-spacing="2">SÉRIES</text>
+  <text x="436" y="817" fill="#f4f4f5" font-size="49" font-family="Arial" font-weight="700">${sets}</text>
+
+  <rect x="698" y="680" width="270" height="190" rx="28" fill="#171719" stroke="#2d2d32"/>
+  <text x="729" y="735" fill="#72727a" font-size="18" font-family="Arial" letter-spacing="2">REPS</text>
+  <text x="729" y="817" fill="#f4f4f5" font-size="49" font-family="Arial" font-weight="700">${reps}</text>
+
+  <rect x="112" y="920" width="856" height="150" rx="28" fill="#121214" stroke="#2b2b30"/>
+  <text x="145" y="970" fill="#6f6f77" font-size="18" font-family="Arial" letter-spacing="2">SENSAÇÃO DA SESSÃO</text>
+  <text x="145" y="1035" fill="#eeeeef" font-size="38" font-family="Arial" font-weight="700">${esc(effortLabel)}</text>
+
+  <text x="112" y="1150" fill="#777780" font-size="20" font-family="Arial,Helvetica,sans-serif" letter-spacing="3">EXERCÍCIOS REGISTRADOS</text>
   ${rows}
-  <line x1="110" x2="970" y1="1600" y2="1600" stroke="#2b2b30"/>
-  <text x="110" y="1690" fill="#f0f0f2" font-size="38" font-family="Arial" font-weight="600">${athlete}</text>
-  <text x="110" y="1740" fill="#77777e" font-size="24" font-family="Arial">Treino registrado no TYVON</text>
-  <circle cx="915" cy="1705" r="42" fill="#ededee"/><text x="899" y="1720" fill="#111" font-size="42" font-family="Arial" font-weight="800">T</text>
+
+  <line x1="112" x2="968" y1="1670" y2="1670" stroke="#29292e"/>
+  <text x="112" y="1758" fill="#f0f0f2" font-size="36" font-family="Arial" font-weight="600">${athlete}</text>
+  <text x="112" y="1808" fill="#73737a" font-size="22" font-family="Arial">Seu treino. Seus dados. Seu progresso.</text>
+  <circle cx="915" cy="1768" r="42" fill="#ededee"/><text x="899" y="1783" fill="#111" font-size="42" font-family="Arial" font-weight="800">T</text>
  </svg>`;
 }
 
@@ -49,13 +72,16 @@ async function pngFromSvg(svg){
  }finally{URL.revokeObjectURL(url)}
 }
 
-export async function shareWorkoutStory(workout,log,name){
- const blob=await pngFromSvg(storySvg(workout,log,name));
+export async function downloadWorkoutInsightCard(workout,log,name){
+ const blob=await pngFromSvg(insightSvg(workout,log,name));
  if(!blob)throw new Error('Não foi possível gerar o card.');
- const file=new File([blob],'tyvon-treino.png',{type:'image/png'});
- const text=`TYVON · ${workout?.name||log?.name||'Treino'} · ${formatMinutes(log?.minutes)} · ${Math.round(Number(log?.sets)||0)} séries`;
- if(navigator.canShare?.({files:[file]})){await navigator.share({title:'Meu treino TYVON',text,files:[file]});return 'shared'}
- if(navigator.share){await navigator.share({title:'Meu treino TYVON',text});return 'shared'}
- const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ const safeName=String(workout?.name||log?.name||'treino').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'treino';
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;
+ a.download=`tyvon-insights-${safeName}.png`;
+ document.body.appendChild(a);
+ a.click();
+ a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1500);
  return 'downloaded';
 }
