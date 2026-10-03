@@ -68,7 +68,7 @@ export default function Entry({blocked=false,Logo,user,profile,loading,error,onR
  const recoverLabel=legacy?'Recuperar perfil de '+legacy.name+' deste aparelho':'Recuperar perfil deste aparelho';
 
  function switchAccount(){
-  Promise.resolve(onSignOut()).catch(()=>setFormError('Não foi possível sair da conta. Tente novamente.'));
+  Promise.resolve().then(()=>onSignOut()).catch(()=>setFormError('Não foi possível sair da conta. Tente novamente.'));
  }
 
  return <div className="entry-shell" inert={blocked}>
